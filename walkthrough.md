@@ -40,9 +40,13 @@ SankhyaVox/
 │   ├── raw/             # Raw repeated-utterance recordings
 │   ├── segments/        # Individual segmented utterances
 │   └── features/        # Extracted MFCC .npy files
+├── docs/
+│   └── speaker_instruction_sheet.tex  # Printable speaker guide
 ├── scripts/
-│   ├── segment.py       # VAD-based auto-segmentation
-│   └── extract_features.py  # 39-dim MFCC extraction
+│   ├── segment.py           # VAD-based auto-segmentation
+│   ├── extract_features.py  # 39-dim MFCC extraction
+│   ├── qa_segments.py       # Segment QA validation
+│   └── validate_naming.py   # File naming enforcer
 ├── src/
 │   ├── __init__.py
 │   ├── config.py        # All hyperparameters & settings
@@ -58,11 +62,14 @@ SankhyaVox/
 
 | File | Purpose |
 |---|---|
-| [config.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/src/config.py) | Central config — sample rate, MFCC params, HMM states per word, vocab, split ratios |
-| [grammar.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/src/grammar.py) | Full BNF grammar for 0–99, [number_to_tokens()](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/src/grammar.py#40-96), [tokens_to_number()](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/src/grammar.py#106-142), FSA builder |
-| [segment.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/scripts/segment.py) | Energy-based VAD segmentation with highpass filter, adaptive threshold, morphological smoothing |
-| [extract_features.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/scripts/extract_features.py) | Pre-processing + MFCC extraction (Hamming, 26 Mel banks, deltas, CMVN) |
-| [requirements.txt](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/requirements.txt) | numpy, scipy, librosa, soundfile, hmmlearn, scikit-learn, matplotlib, seaborn, tqdm |
+| `src/config.py` | Central config — sample rate, MFCC params, HMM states per word, vocab, split ratios |
+| `src/grammar.py` | Full BNF grammar for 0–99, `number_to_tokens()`, `tokens_to_number()`, FSA builder |
+| `scripts/segment.py` | Energy-based VAD segmentation with highpass filter, adaptive threshold, morphological smoothing |
+| `scripts/extract_features.py` | Pre-processing + MFCC extraction (Hamming, 26 Mel banks, deltas, CMVN) |
+| `scripts/qa_segments.py` | Segment QA — checks rep counts, flags short/long clips, reports missing tokens |
+| `scripts/validate_naming.py` | File naming enforcer with `--fix` auto-rename mode |
+| `docs/speaker_instruction_sheet.tex` | Printable speaker recording guide (LaTeX) |
+| `requirements.txt` | numpy, scipy, librosa, soundfile, hmmlearn, scikit-learn, matplotlib, seaborn, tqdm |
 
 ---
 
@@ -71,40 +78,36 @@ SankhyaVox/
 ### Phase 1 ✅ — Project Setup
 Core infrastructure, config, directory structure, and grammar module.
 
-### Phase 2 — Data Collection (Weeks 1–3)
-- Distribute speaker instruction sheets
-- Collect 13 words × 10 reps per speaker (isolated words)
-- Collect 35 two-digit combinations × 10 reps per speaker
-- Run [segment.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/scripts/segment.py) to split raw recordings → individual utterances
-- QA: verify exactly 10 segments per file, flag outliers
+### Phase 2 ✅ — Data Collection Tools
+Speaker instruction sheet, segmentation pipeline, QA validation, naming enforcer.
 
-### Phase 3 — Feature Extraction (Week 6)
-- Run [extract_features.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/scripts/extract_features.py) on all segments
+### Phase 3 — Feature Extraction 
+- Run `scripts/extract_features.py` on all segments
 - Visualise spectrograms and MFCC heatmaps
 - Verify feature dimensions (n_frames × 39)
 
-### Phase 4 — Grammar & FSA (Week 8)
-- Unit-test [grammar.py](file:///c:/Users/rakes/OneDrive/Desktop/Sujal/SankhyaVox/src/grammar.py) for all 100 numbers
+### Phase 4 — Grammar & FSA 
+- Unit-test `src/grammar.py` for all 100 numbers
 - Compile grammar to FSA for Viterbi integration
 - Verify unambiguity and complete coverage
 
-### Phase 5 — HMM System (Weeks 7–8)
+### Phase 5 — HMM System 
 - Implement word-level left-to-right HMMs with GMM emissions
 - Baum-Welch training (flat-start → 15 EM iterations)
 - Grammar-constrained Viterbi decoder
 - Silence model integration
 
-### Phase 6 — Baseline Models (Week 9)
+### Phase 6 — Baseline Models
 - GMM classifier (max-likelihood on summarised features)
 - k-NN + DTW (Dynamic Time Warping distance)
 - SVM with RBF kernel (grid search C, γ)
 
-### Phase 7 — Evaluation & Ablation (Weeks 10–11)
+### Phase 7 — Evaluation & Ablation 
 - 5-fold speaker-out cross-validation (7 train / 2 val / 1 test)
 - Word Accuracy, WER, confusion matrices
 - Ablations: grammar on/off, MFCC dims, HMM states, GMM mixtures, CMVN, #speakers
 
-### Phase 8 — Report & Demo (Week 12)
+### Phase 8 — Report & Demo 
 - Generate all results tables and figures
 - Error analysis (which phonemes confuse most: dvi/tri, sapta/ṣaṭ)
 - Final report, poster, optional web demo

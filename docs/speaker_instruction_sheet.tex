@@ -1,0 +1,257 @@
+\documentclass[11pt,a4paper]{article}
+
+% -- Packages ----------------------------------------------------------------
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+\usepackage{mdframed}
+\usepackage{parskip}
+
+% -- Colours -----------------------------------------------------------------
+\definecolor{saffron}{RGB}{255,153,51}
+\definecolor{deepblue}{RGB}{13,71,161}
+\definecolor{teal}{RGB}{0,105,92}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{warningred}{RGB}{183,28,28}
+
+% -- Hyperref ----------------------------------------------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=deepblue,
+  urlcolor=saffron,
+  pdftitle={SankhyaVox Speaker Recording Guide},
+  pdfauthor={SankhyaVox Team},
+}
+
+% -- Header / Footer ---------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{deepblue}\textbf{SankhyaVox}}
+\fancyhead[R]{\small\color{gray}Speaker Recording Guide}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% -- Custom Box --------------------------------------------------------------
+\newtcolorbox{infobox}[2][]{%
+  enhanced, breakable,
+  colback=lightgray, colframe=saffron, coltitle=white,
+  fonttitle=\bfseries\small, title=#2, #1,
+  boxrule=1pt, arc=4pt,
+}
+\newtcolorbox{warnbox}[1][]{%
+  enhanced, colback=red!5, colframe=warningred,
+  fontupper=\small, boxrule=0.8pt, arc=3pt, #1
+}
+
+% ============================================================================
+\begin{document}
+
+% -- Title -------------------------------------------------------------------
+\begin{center}
+  {\color{saffron}\rule{\textwidth}{2pt}}\\[0.4cm]
+  {\Huge\bfseries\color{deepblue} SankhyaVox}\\[0.2cm]
+  {\Large\color{gray}\textit{Speaker Recording Guide}}\\[0.3cm]
+  {\color{saffron}\rule{\textwidth}{1pt}}
+\end{center}
+
+\vspace{0.5cm}
+\noindent
+\textbf{Thank you for contributing to this Sanskrit speech research project!}
+You do \textbf{not} need any Sanskrit background.
+Just follow these steps carefully.
+
+% ============================================================================
+\section*{1 \quad What You Will Record}
+
+You will record \textbf{13 Sanskrit words}, each spoken \textbf{10 times} in a single
+recording file.
+Later, you will also record \textbf{35 two-word combinations} (10 times each).
+
+\vspace{0.3cm}
+\begin{infobox}{Summary}
+\begin{tabular}{lrl}
+\toprule
+\textbf{Session} & \textbf{Recordings} & \textbf{Estimated Time} \\
+\midrule
+Isolated words (13 words $\times$ 1 file each) & 13 files & $\sim$5 min \\
+Two-digit combos (35 combos $\times$ 1 file each) & 35 files & $\sim$15 min \\
+\bottomrule
+\end{tabular}
+\end{infobox}
+
+% ============================================================================
+\section*{2 \quad Environment Setup}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item Go to the \textbf{quietest room} available.
+  \item \textbf{Close the door.} Switch off fan/AC if possible.
+  \item \textbf{Early morning or late night} is best (lowest ambient noise).
+  \item Keep pets and other people out during recording.
+\end{enumerate}
+
+% ============================================================================
+\section*{3 \quad Phone / Mic Setup}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item Use your \textbf{default voice recorder app} (or Audacity on PC).
+  \item Hold the phone \textbf{15--25\,cm} from your mouth, mic facing you.
+  \item \textbf{Do not cover} the microphone with your hand.
+  \item A wired earphone mic is preferred (more consistent distance), but not required.
+  \item Save recordings as \texttt{.wav} if possible; \texttt{.mp3} is acceptable.
+\end{enumerate}
+
+% ============================================================================
+\section*{4 \quad How to Record One Word}
+
+\begin{infobox}{Step-by-Step}
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item Press \textbf{Record}.
+  \item \textbf{Wait 1 second} (silence).
+  \item Say the word \textbf{clearly} at natural volume.
+  \item \textbf{Wait 1 second} (silence).
+  \item Repeat steps 3--4 for a total of \textbf{10 times}.
+  \item Press \textbf{Stop}.
+\end{enumerate}
+
+\vspace{4pt}
+\textbf{Rhythm:}
+\[
+  \underbrace{\text{(silence)}}_{1\text{s}}
+  \;\underbrace{\text{word}}_{\sim 0.7\text{s}}
+  \;\underbrace{\text{(silence)}}_{1\text{s}}
+  \;\underbrace{\text{word}}_{\sim 0.7\text{s}}
+  \;\cdots\; \times 10
+  \quad\Rightarrow\quad \sim 17\text{s total}
+\]
+\end{infobox}
+
+\begin{warnbox}
+\textbf{During recording, do NOT:}
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Cough, laugh, or say ``umm'' in the silent gaps.
+  \item Whisper or shout --- use your \textbf{normal speaking voice}.
+  \item Move the phone closer/further mid-recording.
+\end{itemize}
+\end{warnbox}
+
+% ============================================================================
+\section*{5 \quad File Naming}
+
+Save each recording as:
+\begin{center}
+  \texttt{\textbf{<YourID>\_<wordname>\_raw.wav}}
+\end{center}
+
+\noindent\textbf{Examples:}
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item \texttt{S04\_eka\_raw.wav}
+  \item \texttt{S04\_pancha\_raw.wav}
+  \item \texttt{S04\_dasha\_eka\_raw.wav} \quad (for the combo ``dasha eka'' = 11)
+\end{itemize}
+
+Your Speaker ID will be assigned to you (e.g.\ \texttt{S01}, \texttt{S02}, \ldots).
+
+% ============================================================================
+\section*{6 \quad Word List --- Isolated Words}
+
+Record each of these \textbf{13 words} as a separate file (10 repetitions each):
+
+\vspace{0.3cm}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{clcll}
+\toprule
+\textbf{\#} & \textbf{Word} & \textbf{Value} &
+\textbf{Pronunciation} & \textbf{File name} \\
+\midrule
+ 1  & \'{s}\={u}nya       & 0   & SHOON-ya  & \texttt{S\_\_\_shunya\_raw.wav} \\
+ 2  & eka                  & 1   & AY-ka     & \texttt{S\_\_\_eka\_raw.wav} \\
+ 3  & dvi                  & 2   & DWEE      & \texttt{S\_\_\_dvi\_raw.wav} \\
+ 4  & tri                  & 3   & TREE      & \texttt{S\_\_\_tri\_raw.wav} \\
+ 5  & catur                & 4   & cha-TUR   & \texttt{S\_\_\_catur\_raw.wav} \\
+ 6  & pa\~{n}ca            & 5   & PUN-cha   & \texttt{S\_\_\_pancha\_raw.wav} \\
+ 7  & \d{s}a\d{t}          & 6   & SHUT      & \texttt{S\_\_\_shat\_raw.wav} \\
+ 8  & sapta                & 7   & SUP-ta    & \texttt{S\_\_\_sapta\_raw.wav} \\
+ 9  & a\d{s}\d{t}a         & 8   & USH-ta    & \texttt{S\_\_\_ashta\_raw.wav} \\
+10  & nava                 & 9   & NUH-va    & \texttt{S\_\_\_nava\_raw.wav} \\
+11  & da\'{s}a             & 10  & da-SHA    & \texttt{S\_\_\_dasha\_raw.wav} \\
+12  & vi\d{m}\'{s}ati      & 20  & vim-SHA-ti& \texttt{S\_\_\_vimsati\_raw.wav} \\
+13  & \'{s}ata             & 100 & SHA-ta    & \texttt{S\_\_\_shata\_raw.wav} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+\begin{infobox}{Pronunciation Note}
+Small pronunciation differences are perfectly fine.
+What matters most is that you are \textbf{consistent with yourself} across all
+10 repetitions. Say it the same way every time.
+\end{infobox}
+
+% ============================================================================
+\section*{7 \quad Two-Digit Combinations}
+
+After finishing the 13 isolated words, record these \textbf{35 combinations}.
+Each combination is spoken as separate words with a small pause between them.
+
+\vspace{0.3cm}
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{lll|lll}
+\toprule
+\textbf{Spoken form} & \textbf{=} & \textbf{File suffix} &
+\textbf{Spoken form} & \textbf{=} & \textbf{File suffix} \\
+\midrule
+dasha eka              & 11 & \texttt{dasha\_eka}       & pancha dasha sapta & 57 & \texttt{pancha\_dasha\_sapta} \\
+dasha pancha           & 15 & \texttt{dasha\_pancha}    & shat dasha         & 60 & \texttt{shat\_dasha} \\
+dasha nava             & 19 & \texttt{dasha\_nava}      & shat dasha tri     & 63 & \texttt{shat\_dasha\_tri} \\
+vimsati                & 20 & \texttt{vimsati}          & sapta dasha        & 70 & \texttt{sapta\_dasha} \\
+vimsati eka            & 21 & \texttt{vimsati\_eka}     & sapta dasha dvi    & 72 & \texttt{sapta\_dasha\_dvi} \\
+vimsati pancha         & 25 & \texttt{vimsati\_pancha}  & ashta dasha        & 80 & \texttt{ashta\_dasha} \\
+vimsati sapta          & 27 & \texttt{vimsati\_sapta}   & ashta dasha pancha & 85 & \texttt{ashta\_dasha\_pancha} \\
+vimsati nava           & 29 & \texttt{vimsati\_nava}    & nava dasha         & 90 & \texttt{nava\_dasha} \\
+tri dasha              & 30 & \texttt{tri\_dasha}       & nava dasha eka     & 91 & \texttt{nava\_dasha\_eka} \\
+tri dasha catur        & 34 & \texttt{tri\_dasha\_catur}& nava dasha pancha  & 95 & \texttt{nava\_dasha\_pancha} \\
+catur dasha            & 40 & \texttt{catur\_dasha}     & nava dasha sapta   & 97 & \texttt{nava\_dasha\_sapta} \\
+catur dasha dvi        & 42 & \texttt{catur\_dasha\_dvi}& nava dasha nava    & 99 & \texttt{nava\_dasha\_nava} \\
+catur dasha ashta      & 48 & \texttt{catur\_dasha\_ashta}& shunya           &  0 & \texttt{shunya} \\
+pancha dasha           & 50 & \texttt{pancha\_dasha}    & ashta              &  8 & \texttt{ashta} \\
+pancha dasha eka       & 51 & \texttt{pancha\_dasha\_eka}& sapta             &  7 & \texttt{sapta} \\
+pancha dasha ashta     & 58 & \texttt{pancha\_dasha\_ashta}& tri              &  3 & \texttt{tri} \\
+pancha dasha nava      & 59 & \texttt{pancha\_dasha\_nava}& &  & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+\noindent
+\textbf{File naming for combos:}
+\texttt{S04\_dasha\_eka\_raw.wav} (for ``dasha eka'' = 11)
+
+% ============================================================================
+\section*{8 \quad Submitting Your Recordings}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item Create a folder named with your Speaker ID (e.g.\ \texttt{S04}).
+  \item Place all your \texttt{\_raw.wav} files inside it.
+  \item Share the folder via \textbf{WhatsApp} or \textbf{Google Drive link}.
+\end{enumerate}
+
+\vspace{0.5cm}
+\begin{center}
+  {\color{saffron}\rule{0.6\textwidth}{1pt}}\\[0.3cm]
+  {\small\color{gray} Thank you for your contribution to Sanskrit speech research!}
+\end{center}
+
+\end{document}
