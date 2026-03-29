@@ -1,0 +1,6 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = gdrive://1MWPhi6LKuwCv4XJ6CBu8pEaE2mki9XhZ
+    gdrive_use_service_account = true
+    gdrive_service_account_json_file_path = ../gcp_key.json
