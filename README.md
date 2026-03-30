@@ -3,158 +3,182 @@
 
 SankhyaVox is an acoustic model and grammar-constrained speech recognition system that accurately recognises spoken Sanskrit numbers 0-99 using only **13 base recordings** per speaker (`shunya`, `eka`, `dvi`, ..., `vimsati`, `shata`). Built with classical HMM (Hidden Markov Model) techniques, it exploits Sanskrit's highly compositional grammatical structure to assemble acoustic base units into larger numbers the system has never been explicitly trained on.
 
+## Directory Overview
+
+```
+SankhyaVox/
+├── data/                 # DVC-tracked raw human recordings (immutable source)
+├── data_processed/       # Runtime-generated outputs (git-ignored)
+│   ├── human/            #   converted WAVs, segments, MFCC features
+│   ├── tts/              #   TTS-generated audio and features
+│   └── augmented/        #   augmented data (reserved)
+├── dataset/              # Python module: data pipeline + dataset class
+│   ├── dataset.py        #   SankhyaVoxDataset (indexed, pandas-backed)
+│   ├── pipeline.py       #   DataPipeline (convert, segment, extract, infer)
+│   ├── generator.py      #   TTS generation logic
+│   └── segmentor.py      #   VAD segmentation + QA
+├── src/                  # Core modules
+│   ├── config.py         #   central paths, constants, hyperparameters
+│   └── grammar.py        #   BNF grammar, FSA, number-token maps
+├── models/               # Trained model artifacts (git-ignored)
+├── results/              # Evaluation outputs
+├── scripts/              # CLI entry points (evaluation, etc.)
+├── docs/
+│   ├── guide/            #   roadmap, task checklist, speaker recording guide
+│   └── report/           #   technical report (LaTeX + PDF)
+├── data.dvc              # DVC metadata tracking data/
+├── requirements.txt
+└── README.md
+```
+
 ## Setup
 
 ### 1. Prerequisites
-Install the following before running the pipeline:
 
-- Python 3.9+
-- Git
-- DVC with Google Drive support: `dvc[gdrive]`
-- FFmpeg (recommended if your raw files are `.m4a`/`.aac`)
+- **Python 3.9+**
+- **Git**
+- **DVC with Google Drive support** — installed as `dvc[gdrive]`
+- **FFmpeg** — required for audio format conversion (`.m4a`, `.aac`, `.mp3`, etc.)
 
 ### 2. Installation
-Clone the project and install Python dependencies:
 
 ```bash
 git clone https://github.com/Sujal-02/SankhyaVox.git
 cd SankhyaVox
+
 python -m venv .venv
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
-# macOS/Linux
+# macOS / Linux
 # source .venv/bin/activate
 
 pip install -r requirements.txt
 pip install "dvc[gdrive]"
 ```
 
-### 3. Google Drive Remote Access Requirements
-This project uses a Google Drive folder as the DVC remote backend. Before collaborators can run `dvc pull`/`dvc push`, they must have:
+### 3. Google Drive Remote — Collaborator Access
 
-- Access to the shared Google Drive folder used by the remote (at least Viewer for pull, Editor for push).
-- Access to the Google account that can authorize the OAuth app used by the DVC remote.
+This project uses a **Google Drive folder** as the DVC storage backend. Before you can `dvc pull` or `dvc push`, you need:
 
-If your Google Cloud OAuth consent screen is in **Testing** mode and app type is **External**, then yes: you must add each collaborator email under **Test users** in Google Cloud.
+1. **Google Drive folder access** — the project maintainer must share the Drive folder with your Google account (Viewer for pull, Editor for push).
+2. **Google Cloud OAuth test-user access** — if the OAuth consent screen is in **Testing** mode (External app type), the maintainer must add your email under **Test users** in Google Cloud Console.
 
-### 4. Pull The Versioned Dataset
-If your repository is configured with a DVC remote, pull the `dataset/` folder:
+First-time `dvc pull` / `dvc push` will open a browser-based OAuth flow to authorise your account.
+
+### 4. Pull Raw Data
 
 ```bash
 dvc pull
 ```
 
-First-time authentication for collaborators will open a browser OAuth flow.
+This downloads the DVC-tracked `data/` folder containing raw speaker recordings.
 
-### 5. Prepare Raw Audio In The Expected Layout
-The scripts in `scripts/segment.py` and `src/config.py` expect raw audio at:
+### 5. Run the Processing Pipeline
 
-`data/raw/<SpeakerID>/<SpeakerID>_<token>_raw.wav`
+`DataPipeline` handles all data preparation — format conversion, segmentation, QA, and feature extraction. `SankhyaVoxDataset` provides indexed access over the processed features.
 
-If your files are currently in `dataset/` as `.m4a`/`.aac`, convert and copy them to `data/raw` first.
+```python
+from dataset import DataPipeline, SankhyaVoxDataset
 
-Example PowerShell workflow from repo root:
+pipe = DataPipeline()
 
-```powershell
-New-Item -ItemType Directory -Force -Path data\raw | Out-Null
+# Step 1: Convert raw audio (any format) to standardised 16kHz mono WAV
+pipe.convert()          # data/ → data_processed/human/raw/
 
-Get-ChildItem dataset -Recurse -File | Where-Object { $_.Extension -in '.m4a', '.aac', '.wav' } | ForEach-Object {
-    $speaker = $_.Directory.Name
-    $outDir = Join-Path "data\\raw" $speaker
-    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+# Step 2: Segment repeated-utterance recordings into individual clips
+pipe.segment()          # → data_processed/human/segments/
 
-    $base = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-    $normalized = $base -replace '_chatur_', '_catur_'
-    $outFile = Join-Path $outDir ($normalized + '.wav')
+# Step 3: Validate segment quality
+pipe.validate(mode="qa")
 
-    ffmpeg -y -i $_.FullName -ar 16000 -ac 1 $outFile | Out-Null
-}
+# Step 4: Extract 39-dim MFCC features
+pipe.extract_features("human")   # → data_processed/human/features/
+
+# Or run all steps at once:
+pipe.build()
 ```
 
-### 6. Validate Naming Before Segmentation
-Run naming validation on raw files:
+#### TTS data
 
-```bash
-python scripts/validate_naming.py --dir data/raw --type raw
+```python
+pipe.generate_tts()              # requires: pip install edge_tts
+pipe.extract_features("tts")
 ```
 
-If needed, auto-fix common naming issues:
+#### Loading the dataset
 
-```bash
-python scripts/validate_naming.py --dir data/raw --type raw --fix
+```python
+ds = SankhyaVoxDataset()
+sample = ds[0]               # dict with audio_path, audio_source, speaker_id, token, label, feature
+sample = ds.human[0]         # human-only index
+sample = ds.tts[0]           # tts-only index
+print(ds.summary())
+print(ds.df.head())          # pandas DataFrame with full metadata
 ```
 
-### 7. Segment Raw Recordings
-Split repeated utterances into individual labeled WAV clips:
+#### Single-file inference (live testing)
 
-```bash
-python scripts/segment.py
+For live testing where a user says a number once (no segmentation needed):
+
+```python
+features = pipe.process_single("path/to/test_audio.m4a")
+# features is a numpy array of shape (n_frames, 39)
+# ready to feed directly into the HMM decoder
 ```
 
-Output directory:
+## Data Change Workflow (DVC + Google Drive)
 
-`data/segments/<SpeakerID>/<SpeakerID>_<token>_<rep>.wav`
-
-### 8. Run Segment QA
-Check duration outliers, missing tokens, and repetition counts:
-
-```bash
-python scripts/qa_segments.py
-```
-
-### 9. Extract MFCC Features
-Extract 39-dimensional MFCC features (13 + delta + delta-delta):
-
-```bash
-python scripts/extract_features.py
-```
-
-Output directory:
-
-`data/features/<SpeakerID>/<SpeakerID>_<token>_<rep>.npy`
-
-## Dataset Change Workflow (DVC + Google Drive)
-
-Use this when you add, remove, or modify files under `dataset/`.
-
-Think of this as a two-part workflow:
-
-- DVC stores and versions the heavy data blobs.
-- Git stores the lightweight metadata file (`dataset.dvc`) that points to those blobs.
-
-### The 3-Step Change Loop
-Run these commands in order every time `dataset/` changes:
+When you add, remove, or modify files under `data/`, follow this 3-step loop:
 
 ```bash
 # 1) Update DVC tracking metadata
-dvc add dataset/
+dvc add data/
 
-# 2) Commit the metadata "receipt" to Git
-git add dataset.dvc
-git commit -m "Update dataset: <briefly describe what changed>"
+# 2) Commit the metadata receipt to Git
+git add data.dvc
+git commit -m "Update data: <briefly describe what changed>"
 
-# 3) Push the actual data blobs to Google Drive
+# 3) Push data blobs to Google Drive
 dvc push
 ```
 
-For other collaborators to get the latest dataset after pulling Git commits:
+### Collaborator Sync
+
+After someone pushes data changes:
 
 ```bash
 git pull
 dvc pull
 ```
 
-To verify local workspace matches latest DVC-tracked data:
+### Verify Data State
 
 ```bash
 dvc status -c
 ```
 
+## Collaborator Quick-Reference
+
+| Action | Commands |
+|---|---|
+| **First-time setup** | Clone, install deps, `dvc pull` (triggers OAuth) |
+| **Get latest data** | `git pull` then `dvc pull` |
+| **Push data changes** | `dvc add data/` → `git add data.dvc` → `git commit` → `dvc push` |
+| **Auth issues** | Confirm Drive folder access + Test User in Google Cloud |
+
+## Documentation
+
+| Document | Path | Contents |
+|---|---|---|
+| **Project Roadmap** | `docs/guide/roadmap.md` | Architecture overview, directory layout, implementation phases, design decisions, next steps |
+| **Task Checklist** | `docs/guide/tasks.md` | Phase-by-phase checklist with completion status |
+| **Speaker Recording Guide** | `docs/guide/speaker_guide/` | LaTeX instruction sheet + PDF for distributing to speakers |
+| **Technical Report** | `docs/report/SankhyaVox_Technical_Report.tex` | Full system specification — grammar, HMM design, evaluation plan, baselines, bibliography |
+
 ## Notes
 
-- Core paths and hyperparameters are in `src/config.py`.
-- Tokens expected by the pipeline are ASCII labels from `src/config.py` (`VOCAB`).
-- Keep DVC secrets only in `.dvc/config.local` (never in `.dvc/config`).
-- If `dvc pull` fails due to authentication, re-run `dvc pull` to trigger OAuth and confirm your email has Drive folder access and (if required) Test User access in Google Cloud.
-
-For the full project workflow and milestones, see `walkthrough.md` and `task.md`.
+- All paths and hyperparameters are defined in `src/config.py`.
+- Token vocabulary uses ASCII labels from `src/config.py` (`VOCAB`).
+- Feature visualisation tools (spectrograms, MFCC heatmaps, comparisons) are in `src/viz.py`.
+- Keep DVC credentials in `.dvc/config.local` only — never commit secrets to `.dvc/config`.
+- `data_processed/` and `models/` are git-ignored and regenerated at runtime.

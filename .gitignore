@@ -1,2 +1,6 @@
-/dataset
-gcp_key.json
+/data
+/data_processed
+/models
+__pycache__/
+*.pyc
+.venv/
