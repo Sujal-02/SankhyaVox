@@ -4,20 +4,26 @@
 - [x] Read and analyse the technical report
 - [x] Create project directory structure
 - [x] Create `requirements.txt` with all dependencies
-- [x] Create project configuration (`config.py`)
+- [x] Create project configuration (`src/config.py`)
 - [x] Set up `README.md` with setup instructions
+- [x] Set up DVC with Google Drive remote
+- [x] Reorganize repo: `data/` (DVC-tracked), `data_processed/` (runtime), `dataset/` (module), `docs/guide/`, `docs/report/`
 
-## Phase 2: Data Collection Tools 
-- [x] Create speaker instruction sheet (`docs/speaker_instruction_sheet.tex`)
-- [x] Build automated segmentation pipeline (`scripts/segment.py`)
-- [x] Build batch segmentation runner (included in `segment.py`)
-- [x] Create segment QA / validation script (`scripts/qa_segments.py`)
-- [x] Implement file naming convention enforcement (`scripts/validate_naming.py`)
+## Phase 2: Data Collection & Processing Tools
+- [x] Create speaker instruction sheet (`docs/guide/speaker_guide/speaker_instruction_sheet.tex`)
+- [x] Build automated segmentation pipeline (`dataset/segmentor.py`)
+- [x] Build batch segmentation runner (`dataset/segmentor.batch_segment()`)
+- [x] Create segment QA / validation (`dataset/segmentor.qa_segments()`)
+- [x] Implement file naming convention enforcement (`dataset/segmentor.validate_naming()`)
+- [x] Build audio format conversion pipeline (`dataset/pipeline.DataPipeline.convert()`)
+- [x] Build TTS data generator (`dataset/generator.py`)
+- [x] Build single-file inference preprocessor (`dataset/pipeline.DataPipeline.process_single()`)
 
 ## Phase 3: Feature Extraction 
 - [x] Implement audio pre-processing (resample, DC removal, pre-emphasis, normalisation)
 - [x] Implement 39-dim MFCC extraction with CMVN
-- [ ] Build feature visualisation tools (spectrograms, MFCC heatmaps)
+- [x] Create feature storage/loading utilities (`dataset/dataset.SankhyaVoxDataset`)
+- [x] Build feature visualisation tools — spectrograms, MFCC heatmaps, comparison grids (`src/viz.py`)
 - [ ] Create feature storage/loading utilities
 
 ## Phase 4: Grammar & Language Model 
