@@ -30,6 +30,7 @@ from typing import Optional, Tuple
 import librosa
 import numpy as np
 import soundfile as sf
+from tqdm import tqdm
 
 from src.config import (
     APPLY_CMVN,
@@ -91,7 +92,7 @@ class DataPipeline:
 
     # ── Audio format conversion ───────────────────────────────────────────
 
-    _AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".wma"}
+    _AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".mp4", ".aac", ".flac", ".ogg", ".wma"}
 
     @staticmethod
     def _convert_single_file(
@@ -169,15 +170,14 @@ class DataPipeline:
             return 0
 
         count = 0
-        for fpath in files:
+        for fpath in tqdm(files, desc="Converting", unit="file"):
             rel = fpath.relative_to(src)
             out_path = dst / rel.with_suffix(".wav")
             ok = self._convert_single_file(str(fpath), str(out_path))
             if ok:
                 count += 1
-                print(f"  Converted: {rel}")
 
-        print(f"\nDone. Converted {count}/{len(files)} files -> {dst}")
+        print(f"Done. Converted {count}/{len(files)} files -> {dst}")
         return count
 
     # ── Segmentation ──────────────────────────────────────────────────────
@@ -312,21 +312,23 @@ class DataPipeline:
         if source is None or source == "augmented":
             pairs.append((self.aug_segment_dir, self.aug_feature_dir))
 
-        total = 0
+        all_wavs = []
         for seg_dir, feat_dir in pairs:
             wavs = sorted(glob.glob(f"{seg_dir}/**/*.wav", recursive=True))
-            if not wavs:
-                continue
-            for wav_path in wavs:
-                rel = os.path.relpath(os.path.dirname(wav_path), str(seg_dir))
-                out = os.path.join(str(feat_dir), rel)
-                self._process_wav(wav_path, out)
-                total += 1
-                if total % 50 == 0:
-                    print(f"  Processed {total} files...")
+            for w in wavs:
+                all_wavs.append((w, seg_dir, feat_dir))
 
-        print(f"\nDone. Extracted features for {total} files.")
-        return total
+        if not all_wavs:
+            print("No WAV files found for feature extraction.")
+            return 0
+
+        for wav_path, seg_dir, feat_dir in tqdm(all_wavs, desc="Extracting features", unit="file"):
+            rel = os.path.relpath(os.path.dirname(wav_path), str(seg_dir))
+            out = os.path.join(str(feat_dir), rel)
+            self._process_wav(wav_path, out)
+
+        print(f"Done. Extracted features for {len(all_wavs)} files.")
+        return len(all_wavs)
 
     # ── Full pipeline ─────────────────────────────────────────────────────
 

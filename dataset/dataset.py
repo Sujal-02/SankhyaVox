@@ -34,15 +34,22 @@ class CategoryView:
     def __init__(self, df: pd.DataFrame):
         self._df = df.reset_index(drop=True)
 
-    def __getitem__(self, idx: int) -> Tuple[np.ndarray, int]:
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        """Return a sample dict for the given index."""
         row = self._df.iloc[idx]
-        features = np.load(row["npy_path"])
-        return features, int(row["label"])
+        return {
+            "audio_path": row["wav_path"],
+            "audio_source": row["category"],
+            "speaker_id": row["speaker"],
+            "token": row["sanskrit_label"],
+            "label": int(row["label"]),
+            "feature": np.load(row["npy_path"]),
+        }
 
     def __len__(self) -> int:
         return len(self._df)
 
-    def __iter__(self) -> Iterator[Tuple[np.ndarray, int]]:
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
         for i in range(len(self)):
             yield self[i]
 
@@ -176,16 +183,32 @@ class SankhyaVoxDataset:
 
     # ── Indexing ──────────────────────────────────────────────────────────
 
-    def __getitem__(self, idx: int) -> Tuple[np.ndarray, int]:
-        """Return ``(features, label)`` for the given global index."""
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        """
+        Return a sample dict for the given global index.
+
+        Keys:
+            ``audio_path``   — path to the source ``.wav`` segment
+            ``audio_source`` — category (``"human"``, ``"tts"``, ``"augmented"``)
+            ``speaker_id``   — e.g. ``"S01"``
+            ``token``        — Sanskrit label (e.g. ``"eka"``)
+            ``label``        — integer value (e.g. ``1``)
+            ``feature``      — MFCC ndarray of shape ``(n_frames, 39)``
+        """
         row = self._df.iloc[idx]
-        features = np.load(row["npy_path"])
-        return features, int(row["label"])
+        return {
+            "audio_path": row["wav_path"],
+            "audio_source": row["category"],
+            "speaker_id": row["speaker"],
+            "token": row["sanskrit_label"],
+            "label": int(row["label"]),
+            "feature": np.load(row["npy_path"]),
+        }
 
     def __len__(self) -> int:
         return len(self._df)
 
-    def __iter__(self) -> Iterator[Tuple[np.ndarray, int]]:
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
         for i in range(len(self)):
             yield self[i]
 

@@ -20,6 +20,7 @@ import numpy as np
 import soundfile as sf
 from scipy.ndimage import binary_closing, binary_opening
 from scipy.signal import butter, filtfilt
+from tqdm import tqdm
 
 from src.config import (
     ENERGY_THRESHOLD,
@@ -202,26 +203,24 @@ def batch_segment(raw_dir: str, out_dir: str) -> int:
         return 0
 
     total = 0
-    for wav_path in wavs:
+    for wav_path in tqdm(wavs, desc="Segmenting", unit="file"):
         basename = os.path.basename(wav_path).replace("_raw.wav", "")
         parts = basename.split("_", 1)
         if len(parts) != 2:
-            print(f"  SKIP: Cannot parse {basename}")
+            tqdm.write(f"  SKIP: Cannot parse {basename}")
             continue
 
         speaker, token = parts[0], parts[1]
         numeric_id = TOKEN_TO_NUMERIC_ID.get(token)
         if numeric_id is None:
-            print(f"  SKIP: Unknown token '{token}' in {basename}")
+            tqdm.write(f"  SKIP: Unknown token '{token}' in {basename}")
             continue
 
         speaker_out = os.path.join(out_dir, speaker)
-        print(f"Processing {wav_path} ...")
         n = segment_file(wav_path, speaker, numeric_id, speaker_out)
         total += n
-        print(f"  -> {n} segments")
 
-    print(f"\nDone. Total segments: {total}")
+    print(f"Done. Total segments: {total}")
     return total
 
 

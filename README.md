@@ -109,11 +109,11 @@ pipe.extract_features("tts")
 
 ```python
 ds = SankhyaVoxDataset()
-features, label = ds[0]          # global index over all categories
-features, label = ds.human[0]    # human-only index
-features, label = ds.tts[0]      # tts-only index
+sample = ds[0]               # dict with audio_path, audio_source, speaker_id, token, label, feature
+sample = ds.human[0]         # human-only index
+sample = ds.tts[0]           # tts-only index
 print(ds.summary())
-print(ds.df.head())              # pandas DataFrame with full metadata
+print(ds.df.head())          # pandas DataFrame with full metadata
 ```
 
 #### Single-file inference (live testing)

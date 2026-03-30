@@ -142,8 +142,8 @@ TTS_VOICES = {
     "TTS03": "en-US-GuyNeural",
     "TTS04": "en-US-AriaNeural",
 }
-TTS_RATES   = ["-10%", "-5%", "0%", "+5%", "+10%"]
-TTS_PITCHES = ["-2Hz", "-1Hz", "0Hz", "+1Hz", "+2Hz"]
+TTS_RATES   = ["-10%", "-5%", "+0%", "+5%", "+10%"]
+TTS_PITCHES = ["-2Hz", "-1Hz", "+0Hz", "+1Hz", "+2Hz"]
 TTS_REPS    = 10   # Repetitions per token per voice
 
 # ═══════════════════════════════════════════════════════════════════════════════

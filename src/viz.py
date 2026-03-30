@@ -20,6 +20,7 @@ from typing import Optional
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 import soundfile as sf
 
@@ -48,7 +49,7 @@ def _load_audio(path: str) -> tuple[np.ndarray, int]:
     return audio.astype(np.float32), sr
 
 
-def _save_or_show(fig: plt.Figure, save_path: Optional[str]) -> None:
+def _save_or_show(fig: Figure, save_path: Optional[str]) -> None:
     """Save to file if *save_path* given, otherwise display interactively."""
     if save_path:
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
@@ -69,7 +70,7 @@ def plot_waveform(
     title: Optional[str] = None,
     save_path: Optional[str] = None,
     figsize: tuple = (10, 3),
-) -> plt.Figure:
+) -> Figure:
     """Plot the time-domain waveform of an audio file."""
     audio, sr = _load_audio(audio_path)
     t = np.arange(len(audio)) / sr
@@ -96,7 +97,7 @@ def plot_spectrogram(
     title: Optional[str] = None,
     save_path: Optional[str] = None,
     figsize: tuple = (10, 4),
-) -> plt.Figure:
+) -> Figure:
     """Plot a Mel spectrogram from a WAV file."""
     audio, sr = _load_audio(audio_path)
     if sr != SAMPLE_RATE:
@@ -134,7 +135,7 @@ def plot_mfcc(
     save_path: Optional[str] = None,
     show_deltas: bool = True,
     figsize: tuple = (10, 5),
-) -> plt.Figure:
+) -> Figure:
     """
     Plot an MFCC heatmap.
 
@@ -203,7 +204,7 @@ def plot_comparison(
     kind: str = "mfcc",
     save_path: Optional[str] = None,
     figsize_per_row: tuple = (10, 2.5),
-) -> plt.Figure:
+) -> Figure:
     """
     Plot multiple samples in a vertical grid for side-by-side comparison.
 
