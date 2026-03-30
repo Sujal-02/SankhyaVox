@@ -19,10 +19,12 @@ SankhyaVox/
 │   └── segmentor.py      #   VAD segmentation + QA
 ├── src/                  # Core modules
 │   ├── config.py         #   central paths, constants, hyperparameters
-│   └── grammar.py        #   BNF grammar, FSA, number-token maps
-├── models/               # Trained model artifacts (git-ignored)
+│   ├── grammar.py        #   BNF grammar, FSA, number-token maps
+│   └── viz.py            #   feature visualisation (spectrogram, MFCC, waveform)
+├── models/               # Model definitions (committed code, not weights)
+├── checkpoints/          # Saved model weights (git-ignored, auto-generated)
 ├── results/              # Evaluation outputs
-├── scripts/              # CLI entry points (evaluation, etc.)
+├── scripts/              # CLI entry points and demo scripts
 ├── docs/
 │   ├── guide/            #   roadmap, task checklist, speaker recording guide
 │   └── report/           #   technical report (LaTeX + PDF)
