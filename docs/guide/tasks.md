@@ -24,7 +24,6 @@
 - [x] Implement 39-dim MFCC extraction with CMVN
 - [x] Create feature storage/loading utilities (`dataset/dataset.SankhyaVoxDataset`)
 - [x] Build feature visualisation tools — spectrograms, MFCC heatmaps, comparison grids (`src/viz.py`)
-- [ ] Create feature storage/loading utilities
 
 ## Phase 4: Grammar & Language Model 
 - [x] Implement BNF grammar parser for Sanskrit 0–99
@@ -40,9 +39,10 @@
 - [ ] Silence model (SIL) integration
 
 ## Phase 6: Baseline Models 
-- [ ] GMM classifier (max-likelihood on summarised features)
-- [ ] k-NN + DTW classifier
-- [ ] SVM classifier (RBF kernel, grid search)
+- [ ] GMM classifier — `models/gmm_classifier.py`
+- [ ] k-NN + DTW classifier — `models/knn_dtw_classifier.py`
+- [ ] SVM classifier (RBF kernel, grid search) — `models/svm_classifier.py`
+- [ ] Baseline training notebook — `notebooks/baseline_training.ipynb`
 
 ## Phase 7: Evaluation & Ablation 
 - [ ] Implement speaker-out 5-fold cross-validation

@@ -11,20 +11,27 @@ SankhyaVox/
 ├── data_processed/       # Runtime-generated outputs (git-ignored)
 │   ├── human/            #   converted WAVs, segments, MFCC features
 │   ├── tts/              #   TTS-generated audio and features
-│   └── augmented/        #   augmented data (reserved)
+│   ├── augmented/        #   augmented data (reserved)
+│   ├── human.csv         #   metadata index for human samples
+│   └── tts.csv           #   metadata index for TTS samples
 ├── dataset/              # Python module: data pipeline + dataset class
-│   ├── dataset.py        #   SankhyaVoxDataset (indexed, pandas-backed)
-│   ├── pipeline.py       #   DataPipeline (convert, segment, extract, infer)
+│   ├── dataset.py        #   SankhyaVoxDataset (CSV-backed, indexed)
+│   ├── pipeline.py       #   DataPipeline (convert, segment, extract, CSV gen, infer)
 │   ├── generator.py      #   TTS generation logic
 │   └── segmentor.py      #   VAD segmentation + QA
+├── models/               # Model definitions (committed code, not weights)
+│   ├── gmm_classifier.py #   GMM baseline (per-class max-likelihood)
+│   ├── knn_dtw_classifier.py  # k-NN + DTW baseline
+│   └── svm_classifier.py #   SVM baseline (RBF kernel, grid search)
+├── notebooks/            # Jupyter notebooks (self-contained, no project imports)
+│   └── baseline_training.ipynb  # Train & evaluate all 3 baselines
+├── checkpoints/          # Saved model weights (git-ignored, auto-generated)
+├── results/              # Evaluation outputs
+├── scripts/              # CLI entry points and demo scripts
 ├── src/                  # Core modules
 │   ├── config.py         #   central paths, constants, hyperparameters
 │   ├── grammar.py        #   BNF grammar, FSA, number-token maps
 │   └── viz.py            #   feature visualisation (spectrogram, MFCC, waveform)
-├── models/               # Model definitions (committed code, not weights)
-├── checkpoints/          # Saved model weights (git-ignored, auto-generated)
-├── results/              # Evaluation outputs
-├── scripts/              # CLI entry points and demo scripts
 ├── docs/
 │   ├── guide/            #   roadmap, task checklist, speaker recording guide
 │   └── report/           #   technical report (LaTeX + PDF)

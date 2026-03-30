@@ -1,13 +1,13 @@
 """
 SankhyaVox – Dataset class.
 
-Clean, indexed interface over processed feature data for training and
-evaluation.  Backed by a ``pandas.DataFrame`` with metadata derived from
-the standardised file naming convention:
+Lightweight, CSV-backed indexed dataset for training and evaluation.
+Loads pre-generated metadata CSVs (``human.csv``, ``tts.csv``,
+``augmented.csv``) from the processed data directory instead of
+scanning the filesystem on every init.
 
-    <SpeakerId>_<numericId>_<rep>.npy
-
-Supports global indexing and per-category views (human, tts, augmented).
+CSV columns:
+    npy_path, wav_path, speaker, numeric_id, label, sanskrit_label, rep
 """
 
 from pathlib import Path
@@ -16,81 +16,33 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from src.config import (
-    NUMERIC_ID_TO_TOKEN,
-    PROCESSED_DIR,
-    TOKEN_TO_VALUE,
-)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  CATEGORY VIEW
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-class CategoryView:
-    """Read-only indexed view over a single category of the dataset."""
-
-    def __init__(self, df: pd.DataFrame):
-        self._df = df.reset_index(drop=True)
-
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
-        """Return a sample dict for the given index."""
-        row = self._df.iloc[idx]
-        return {
-            "audio_path": row["wav_path"],
-            "audio_source": row["category"],
-            "speaker_id": row["speaker"],
-            "token": row["sanskrit_label"],
-            "label": int(row["label"]),
-            "feature": np.load(row["npy_path"]),
-        }
-
-    def __len__(self) -> int:
-        return len(self._df)
-
-    def __iter__(self) -> Iterator[Dict[str, Any]]:
-        for i in range(len(self)):
-            yield self[i]
-
-    @property
-    def df(self) -> pd.DataFrame:
-        """Underlying metadata DataFrame for this category."""
-        return self._df
-
-    def __repr__(self) -> str:
-        return f"CategoryView(samples={len(self)})"
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  SANKHYAVOX DATASET
-# ═══════════════════════════════════════════════════════════════════════════════
+from src.config import PROCESSED_DIR
 
 
 class SankhyaVoxDataset:
     """
     Unified dataset for SankhyaVox training and evaluation.
 
-    Scans the processed data directory and builds a pandas DataFrame
-    with columns:
-
-    ============== ================================================
-    ``npy_path``   absolute path to the ``.npy`` feature file
-    ``wav_path``   absolute path to the source ``.wav`` segment
-    ``category``   ``"human"`` | ``"tts"`` | ``"augmented"``
-    ``speaker``    speaker ID  (e.g. ``"S01"``, ``"TTS02"``)
-    ``numeric_id`` 3-digit token ID  (e.g. ``"001"``)
-    ``label``      integer value the token represents (e.g. ``1``)
-    ``sanskrit_label`` token name  (e.g. ``"eka"``)
-    ``rep``        repetition number
-    ============== ================================================
+    Reads ``<processed_dir>/human.csv``, ``tts.csv``, ``augmented.csv``
+    and concatenates them into a single DataFrame.
 
     Parameters
     ----------
-    processed_dir : Path, optional
+    processed_dir : Path or str, optional
         Root of the processed data tree.  Default: ``config.PROCESSED_DIR``.
     categories : list of str, optional
-        Which categories to load.  Default: all present on disk.
+        Which categories to load.  Default: all CSVs present on disk.
+
+    ``ds[i]`` returns::
+
+        {
+            "audio_path":   str,      # path to source .wav segment
+            "audio_source": str,      # "human" | "tts" | "augmented"
+            "speaker_id":   str,      # e.g. "S01"
+            "token":        str,      # Sanskrit label, e.g. "eka"
+            "label":        int,      # numeric value, e.g. 1
+            "feature":      ndarray,  # shape (n_frames, 39)
+        }
     """
 
     CATEGORIES = ("human", "tts", "augmented")
@@ -102,52 +54,24 @@ class SankhyaVoxDataset:
     ):
         self._root = Path(processed_dir) if processed_dir else PROCESSED_DIR
         self._categories = categories or list(self.CATEGORIES)
-        self._df = self._scan()
+        self._df = self._load_csvs()
 
-    # ── Scanning ──────────────────────────────────────────────────────────
+    # ── Loading ───────────────────────────────────────────────────────────
 
-    def _scan(self) -> pd.DataFrame:
-        """Walk feature directories and build the metadata DataFrame."""
-        rows: List[Dict[str, Any]] = []
+    def _load_csvs(self) -> pd.DataFrame:
+        """Load and concatenate category CSV files."""
+        frames = []
+        for cat in self._categories:
+            csv_path = self._root / f"{cat}.csv"
+            if csv_path.exists():
+                df = pd.read_csv(csv_path)
+                df["category"] = cat
+                frames.append(df)
 
-        for category in self._categories:
-            feat_dir = self._root / category / "features"
-            seg_dir = self._root / category / "segments"
+        if not frames:
+            return pd.DataFrame()
 
-            if not feat_dir.exists():
-                continue
-
-            for npy_path in sorted(feat_dir.rglob("*.npy")):
-                stem = npy_path.stem  # e.g. S01_001_01
-                parts = stem.split("_")
-                if len(parts) != 3 or not parts[2].isdigit():
-                    continue
-
-                speaker, numeric_id, rep_str = parts
-                token = NUMERIC_ID_TO_TOKEN.get(numeric_id)
-                if token is None:
-                    continue
-
-                label = TOKEN_TO_VALUE.get(token, -1)
-
-                # Derive wav_path by mirroring the directory structure
-                rel = npy_path.relative_to(feat_dir)
-                wav_path = seg_dir / rel.with_suffix(".wav")
-
-                rows.append(
-                    {
-                        "npy_path": str(npy_path),
-                        "wav_path": str(wav_path),
-                        "category": category,
-                        "speaker": speaker,
-                        "numeric_id": numeric_id,
-                        "label": label,
-                        "sanskrit_label": token,
-                        "rep": int(rep_str),
-                    }
-                )
-
-        return pd.DataFrame(rows)
+        return pd.concat(frames, ignore_index=True)
 
     # ── Properties ────────────────────────────────────────────────────────
 
@@ -157,44 +81,23 @@ class SankhyaVoxDataset:
         return self._df
 
     @property
-    def human(self) -> CategoryView:
-        """View over human-recorded samples only."""
-        return CategoryView(self._df[self._df["category"] == "human"])
-
-    @property
-    def tts(self) -> CategoryView:
-        """View over TTS-generated samples only."""
-        return CategoryView(self._df[self._df["category"] == "tts"])
-
-    @property
-    def augmented(self) -> CategoryView:
-        """View over augmented samples only."""
-        return CategoryView(self._df[self._df["category"] == "augmented"])
-
-    @property
     def speakers(self) -> List[str]:
-        """Sorted list of unique speaker IDs across all categories."""
+        """Sorted list of unique speaker IDs."""
+        if self._df.empty:
+            return []
         return sorted(self._df["speaker"].unique().tolist())
 
     @property
     def tokens(self) -> List[str]:
         """Sorted list of unique Sanskrit token labels."""
+        if self._df.empty:
+            return []
         return sorted(self._df["sanskrit_label"].unique().tolist())
 
     # ── Indexing ──────────────────────────────────────────────────────────
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
-        """
-        Return a sample dict for the given global index.
-
-        Keys:
-            ``audio_path``   — path to the source ``.wav`` segment
-            ``audio_source`` — category (``"human"``, ``"tts"``, ``"augmented"``)
-            ``speaker_id``   — e.g. ``"S01"``
-            ``token``        — Sanskrit label (e.g. ``"eka"``)
-            ``label``        — integer value (e.g. ``1``)
-            ``feature``      — MFCC ndarray of shape ``(n_frames, 39)``
-        """
+        """Return a sample dict for the given global index."""
         row = self._df.iloc[idx]
         return {
             "audio_path": row["wav_path"],
@@ -211,6 +114,17 @@ class SankhyaVoxDataset:
     def __iter__(self) -> Iterator[Dict[str, Any]]:
         for i in range(len(self)):
             yield self[i]
+
+    # ── Batch access ──────────────────────────────────────────────────────
+
+    def get_Xy(self) -> Tuple[List[np.ndarray], List[int]]:
+        """Return ``(features_list, labels_list)`` for model training."""
+        X, y = [], []
+        for i in range(len(self)):
+            s = self[i]
+            X.append(s["feature"])
+            y.append(s["label"])
+        return X, y
 
     # ── Filtering / Splitting ─────────────────────────────────────────────
 

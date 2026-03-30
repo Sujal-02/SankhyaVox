@@ -66,9 +66,16 @@ def main():
         print(f"  TTS generation skipped: {e}")
         print("  (Install edge_tts to enable: pip install edge_tts)\n")
 
-    # ── Step 6: Load into SankhyaVoxDataset ───────────────────────────────
+    # ── Step 6: Generate metadata CSVs ────────────────────────────────────
     print("=" * 70)
-    print("  Step 6: Loading SankhyaVoxDataset")
+    print("  Step 6: Generating metadata CSVs")
+    print("=" * 70)
+    pipe.generate_all_csvs()
+    print()
+
+    # ── Step 7: Load into SankhyaVoxDataset ───────────────────────────────
+    print("=" * 70)
+    print("  Step 7: Loading SankhyaVoxDataset")
     print("=" * 70)
     ds = SankhyaVoxDataset()
     print(ds.summary())
@@ -85,9 +92,9 @@ def main():
         print(f"    Audio path:     {sample['audio_path']}")
         print()
 
-        print(f"  Human samples:  {len(ds.human)}")
-        print(f"  TTS samples:    {len(ds.tts)}")
-        print(f"  Augmented:      {len(ds.augmented)}")
+        print(f"  Human samples:  {len(ds.filter(category='human'))}")
+        print(f"  TTS samples:    {len(ds.filter(category='tts'))}")
+        print(f"  Augmented:      {len(ds.filter(category='augmented'))}")
     else:
         print("  No samples found. Ensure data/ contains raw recordings.")
 

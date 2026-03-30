@@ -25,10 +25,11 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import librosa
 import numpy as np
+import pandas as pd
 import soundfile as sf
 from tqdm import tqdm
 
@@ -44,10 +45,12 @@ from src.config import (
     N_FFT,
     N_MELS,
     N_MFCC,
+    NUMERIC_ID_TO_TOKEN,
     PRE_EMPHASIS,
     PROCESSED_DIR,
     SAMPLE_RATE,
     SEGMENT_DIR,
+    TOKEN_TO_VALUE,
     TTS_FEATURE_DIR,
     TTS_REPS,
     TTS_SEGMENT_DIR,
@@ -330,10 +333,69 @@ class DataPipeline:
         print(f"Done. Extracted features for {len(all_wavs)} files.")
         return len(all_wavs)
 
+    # ── CSV metadata generation ───────────────────────────────────────────
+
+    _CATEGORY_MAP = {
+        "human":     ("human_segment_dir", "human_feature_dir"),
+        "tts":       ("tts_segment_dir",   "tts_feature_dir"),
+        "augmented": ("aug_segment_dir",   "aug_feature_dir"),
+    }
+
+    def generate_csv(self, category: str) -> Path:
+        """
+        Generate a metadata CSV for one category and save it to
+        ``<processed_dir>/<category>.csv``.
+
+        Columns: npy_path, wav_path, speaker, numeric_id, label,
+        sanskrit_label, rep
+        """
+        seg_attr, feat_attr = self._CATEGORY_MAP[category]
+        feat_dir = Path(getattr(self, feat_attr))
+        seg_dir  = Path(getattr(self, seg_attr))
+
+        rows: List[Dict[str, Any]] = []
+        for npy_path in sorted(feat_dir.rglob("*.npy")):
+            parts = npy_path.stem.split("_")
+            if len(parts) != 3 or not parts[2].isdigit():
+                continue
+
+            speaker, numeric_id, rep_str = parts
+            token = NUMERIC_ID_TO_TOKEN.get(numeric_id)
+            if token is None:
+                continue
+
+            rel = npy_path.relative_to(feat_dir)
+            wav_path = seg_dir / rel.with_suffix(".wav")
+
+            rows.append({
+                "npy_path":       str(npy_path),
+                "wav_path":       str(wav_path),
+                "speaker":        speaker,
+                "numeric_id":     numeric_id,
+                "label":          TOKEN_TO_VALUE.get(token, -1),
+                "sanskrit_label": token,
+                "rep":            int(rep_str),
+            })
+
+        csv_path = self.processed_dir / f"{category}.csv"
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
+        print(f"Saved {csv_path} ({len(rows)} rows)")
+        return csv_path
+
+    def generate_all_csvs(self) -> List[Path]:
+        """Generate CSVs for all categories that have features on disk."""
+        paths = []
+        for cat in ("human", "tts", "augmented"):
+            _, feat_attr = self._CATEGORY_MAP[cat]
+            feat_dir = Path(getattr(self, feat_attr))
+            if feat_dir.exists() and any(feat_dir.rglob("*.npy")):
+                paths.append(self.generate_csv(cat))
+        return paths
+
     # ── Full pipeline ─────────────────────────────────────────────────────
 
     def build(self, source: str = "human") -> None:
-        """Run the full pipeline: convert → segment → QA → extract features."""
+        """Run the full pipeline: convert → segment → QA → extract features → generate CSVs."""
         print("=== Converting raw audio ===")
         self.convert()
         print("\n=== Segmenting raw recordings ===")
@@ -342,6 +404,8 @@ class DataPipeline:
         self.validate(source=source, mode="qa")
         print("\n=== Extracting features ===")
         self.extract_features(source=source)
+        print("\n=== Generating metadata CSVs ===")
+        self.generate_all_csvs()
         print("\n=== Pipeline complete ===")
 
     # ── Single-file inference ─────────────────────────────────────────────
