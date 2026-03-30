@@ -368,8 +368,8 @@ class DataPipeline:
             wav_path = seg_dir / rel.with_suffix(".wav")
 
             rows.append({
-                "npy_path":       str(npy_path),
-                "wav_path":       str(wav_path),
+                "npy_path":       str(npy_path.relative_to(self.processed_dir)),
+                "wav_path":       str(wav_path.relative_to(self.processed_dir)),
                 "speaker":        speaker,
                 "numeric_id":     numeric_id,
                 "label":          TOKEN_TO_VALUE.get(token, -1),

@@ -52,7 +52,7 @@ class SankhyaVoxDataset:
         processed_dir: Optional[Path] = None,
         categories: Optional[List[str]] = None,
     ):
-        self._root = Path(processed_dir) if processed_dir else PROCESSED_DIR
+        self._root = (Path(processed_dir) if processed_dir else PROCESSED_DIR).resolve()
         self._categories = categories or list(self.CATEGORIES)
         self._df = self._load_csvs()
 
@@ -99,13 +99,15 @@ class SankhyaVoxDataset:
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         """Return a sample dict for the given global index."""
         row = self._df.iloc[idx]
+        npy_abs = str(self._root / row["npy_path"])
+        wav_abs = str(self._root / row["wav_path"])
         return {
-            "audio_path": row["wav_path"],
+            "audio_path": wav_abs,
             "audio_source": row["category"],
             "speaker_id": row["speaker"],
             "token": row["sanskrit_label"],
             "label": int(row["label"]),
-            "feature": np.load(row["npy_path"]),
+            "feature": np.load(npy_abs),
         }
 
     def __len__(self) -> int:
