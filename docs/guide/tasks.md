@@ -39,10 +39,10 @@
 - [ ] Silence model (SIL) integration
 
 ## Phase 6: Baseline Models 
-- [ ] GMM classifier — `models/gmm_classifier.py`
-- [ ] k-NN + DTW classifier — `models/knn_dtw_classifier.py`
-- [ ] SVM classifier (RBF kernel, grid search) — `models/svm_classifier.py`
-- [ ] Baseline training notebook — `notebooks/baseline_training.ipynb`
+- [x] GMM classifier — `models/gmm_classifier.py`
+- [x] k-NN + DTW classifier — `models/knn_dtw_classifier.py`
+- [x] SVM classifier (RBF kernel, grid search) — `models/svm_classifier.py`
+- [x] Baseline training notebook — `notebooks/baseline_training.ipynb`
 
 ## Phase 7: Evaluation & Ablation 
 - [ ] Implement speaker-out 5-fold cross-validation
