@@ -1,6 +1,6 @@
 /data
 /data_processed
-/models
+/checkpoints
 __pycache__/
 *.pyc
 .venv/
