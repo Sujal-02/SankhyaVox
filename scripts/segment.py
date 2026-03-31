@@ -88,33 +88,52 @@ def segment_utterances(
     frames = [audio[i : i + frame_len] for i in range(0, len(audio) - frame_len, frame_shift)]
     rms = np.array([np.sqrt(np.mean(f ** 2)) for f in frames])
 
-    # Adaptive threshold: percentage of 95th-percentile energy
-    threshold = energy_threshold * np.percentile(rms, 95)
-    is_speech = rms > threshold
-
-    # Smooth labels (remove brief on/off fluctuations)
+    # Adaptive threshold grid search to find EXACTLY expected_reps
     from scipy.ndimage import binary_closing, binary_opening
-
-    kernel = int(min_silence_dur / 0.010)
-    is_speech = binary_closing(is_speech, structure=np.ones(kernel))
-    is_speech = binary_opening(is_speech, structure=np.ones(int(min_speech_dur / 0.010)))
-
-    # Detect segment boundaries
-    boundaries = []
-    in_seg = False
-    for i, s in enumerate(is_speech):
-        if s and not in_seg:
-            start = max(0, i - int(pad_ms / 10))
-            in_seg = True
-        elif not s and in_seg:
-            end = min(len(is_speech), i + int(pad_ms / 10))
-            boundaries.append((start, end))
+    
+    best_segs = []
+    best_diff = float('inf')
+    found_exact = False
+    
+    for min_sil in [0.4, 0.3, 0.2, 0.15, 0.1]:
+        for thresh_mult in np.linspace(0.01, 1.0, 100):
+            threshold = thresh_mult * np.percentile(rms, 95)
+            is_speech_test = rms > threshold
+            
+            kernel_close = max(1, int(min_sil / 0.010))
+            is_speech_test = binary_closing(is_speech_test, structure=np.ones(kernel_close))
+            
+            kernel_open = max(1, int(min_speech_dur / 0.010))
+            is_speech_test = binary_opening(is_speech_test, structure=np.ones(kernel_open))
+            
+            boundaries = []
             in_seg = False
-    if in_seg:
-        boundaries.append((start, len(is_speech)))
+            start = 0
+            for i, s in enumerate(is_speech_test):
+                if s and not in_seg:
+                    start = max(0, i - int(pad_ms / 10))
+                    in_seg = True
+                elif not s and in_seg:
+                    end = min(len(is_speech_test), i + int(pad_ms / 10))
+                    boundaries.append((start, end))
+                    in_seg = False
+            if in_seg:
+                boundaries.append((start, len(is_speech_test)))
+                
+            if len(boundaries) == expected_reps:
+                best_segs = boundaries
+                found_exact = True
+                break
+                
+            if abs(len(boundaries) - expected_reps) < best_diff:
+                best_diff = abs(len(boundaries) - expected_reps)
+                best_segs = boundaries
+                
+        if found_exact:
+            break
 
     # Convert to sample-level boundaries
-    segs = [(b[0] * frame_shift, b[1] * frame_shift) for b in boundaries]
+    segs = [(b[0] * frame_shift, b[1] * frame_shift) for b in best_segs]
 
     if len(segs) != expected_reps:
         print(f"  ⚠ WARNING: Expected {expected_reps} segments, found {len(segs)} in {input_path}")

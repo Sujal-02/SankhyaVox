@@ -35,18 +35,50 @@ from src.config import (
 
 def preprocess_audio(audio: np.ndarray, sr: int = SAMPLE_RATE) -> np.ndarray:
     """
-    Audio pre-processing pipeline:
-    1. DC offset removal (subtract mean)
-    2. Pre-emphasis filter
-    3. Peak normalisation to -3 dBFS
+    Audio pre-processing pipeline wrapper:
+    1. DC offset removal
+    2. VAD Trimming (remove leading/trailing silence)
+    3. RMS Noise Gate (soften mid-utterance noise)
+    4. Pre-emphasis filter
+    5. Peak normalisation
     """
-    # DC offset removal
-    audio = audio - np.mean(audio)
+    if len(audio) == 0:
+        return audio.astype(np.float32)
 
-    # Pre-emphasis
+    # 1. DC offset removal
+    audio = audio - np.mean(audio)
+    
+    # 2. VAD Trimming: Strip leading and trailing silence (anything 30dB below peak)
+    trimmed_audio, _ = librosa.effects.trim(audio, top_db=30, frame_length=512, hop_length=128)
+    if len(trimmed_audio) > int(sr * 0.1): # Keep if at least 100ms
+        audio = trimmed_audio
+
+    # 3. RMS Noise Gate
+    frame_length = int(sr * 0.025)
+    hop_length = int(sr * 0.010)
+    
+    # Pad audio slightly for consistent STFT/RMS frames
+    if len(audio) >= frame_length:
+        rms = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
+        
+        # Smooth the energy contour to prevent choppy gating
+        from scipy.ndimage import median_filter
+        rms = median_filter(rms, size=5)
+        
+        # Determine gate threshold (10% of the speech peak energy)
+        gate_thresh = 0.10 * np.percentile(rms, 95)
+        
+        # Interpolate gate back to audio representation
+        signal_gate = (rms > gate_thresh).astype(np.float32)
+        gate_interp = np.interp(np.arange(len(audio)), np.arange(len(rms)) * hop_length, signal_gate)
+        
+        # Soft mute background noise (attenuate by ~20dB instead of total silence)
+        audio = audio * (0.1 + 0.9 * gate_interp)
+
+    # 4. Pre-emphasis
     audio = np.append(audio[0], audio[1:] - PRE_EMPHASIS * audio[:-1])
 
-    # Peak normalisation to -3 dBFS
+    # 5. Peak normalisation to -3 dBFS
     peak = np.max(np.abs(audio))
     if peak > 0:
         target_peak = 10 ** (-3.0 / 20.0)  # -3 dBFS ≈ 0.708

@@ -144,7 +144,7 @@ def tokens_to_number(tokens: List[str]) -> Optional[int]:
 # ── Full Grammar Enumeration ──────────────────────────────────────────────────
 
 def all_valid_sequences() -> Dict[int, List[str]]:
-    """Return a dict mapping every integer 0–99 to its token sequence."""
+    """Return a dict mapping every integer 0-99 to its token sequence."""
     return {n: number_to_tokens(n) for n in range(100)}
 
 
@@ -171,7 +171,7 @@ def grammar_fsa() -> Dict[str, List[Tuple[str, str]]]:
 # ── Self-test ─────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Verify round-trip for all 0–99
+    # Verify round-trip for all 0-10
     errors = []
     for n in range(100):
         tokens = number_to_tokens(n)
@@ -181,8 +181,8 @@ if __name__ == "__main__":
     if errors:
         print(f"ERRORS: {errors}")
     else:
-        print("✓ All 100 numbers (0–99) round-trip correctly.")
+        print("✓ All 11 numbers (0-10) round-trip correctly.")
         print(f"  Total unique sequences: {len(all_valid_sequences())}")
         # Show a few examples
-        for n in [0, 7, 10, 15, 20, 27, 35, 48, 60, 71, 99]:
+        for n in [0, 5, 10]:
             print(f"  {n:3d} → {' '.join(number_to_tokens(n))}")

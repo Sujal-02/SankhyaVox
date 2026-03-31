@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SankhyaVox — Sanskrit Digit Recognition</title>
+    <meta name="description" content="SankhyaVox: Minimal-Vocabulary Sanskrit Spoken Digit Recognition System using HMM, SVM, and DNN models.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="bg-grid"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+
+    <div class="container">
+        <header>
+            <div class="badge">🕉️ Sanskrit Speech AI</div>
+            <h1>Sankhya<span class="accent">Vox</span></h1>
+            <p class="subtitle">Grammar-Constrained HMM · SVM · DNN — Recognising 0-99 from 13 words</p>
+        </header>
+
+        <!-- Recording Card -->
+        <div class="card main-card">
+            <div class="record-section">
+                <button id="recordButton" class="btn-record" aria-label="Record audio">
+                    <div class="record-ring"></div>
+                    <span class="icon">🎤</span>
+                    <span class="text">Tap to Record</span>
+                </button>
+                <div id="recordingIndicator" class="indicator hidden">
+                    <div class="pulse-dot"></div>
+                    <span>Listening… tap again to stop</span>
+                </div>
+                <audio id="audioPlayback" controls class="audio-player hidden"></audio>
+            </div>
+
+            <div class="divider"><span>or upload a file</span></div>
+
+            <div class="upload-section">
+                <label for="fileUpload" class="btn-upload">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Browse File
+                </label>
+                <input type="file" id="fileUpload" accept="audio/*" class="sr-only">
+                <p id="fileName" class="file-name"></p>
+            </div>
+            
+            <button id="predictButton" class="btn-primary" disabled>
+                <span class="btn-text">Analyze Speech</span>
+                <span class="btn-loader hidden">
+                    <span class="spinner"></span> Processing…
+                </span>
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="resultCard" class="results-grid hidden">
+            <div class="model-card hmm-card">
+                <div class="model-header">
+                    <div class="model-icon">🏛️</div>
+                    <div class="model-label">HMM</div>
+                    <div class="model-tag">Sequence</div>
+                </div>
+                <div class="model-result">
+                    <div class="number-display" id="predNumberHMM">—</div>
+                    <div class="token-display" id="predTokensHMM">waiting</div>
+                </div>
+                <div class="model-footer">
+                    <div class="confidence-bar"><div class="confidence-fill" id="confBarHMM"></div></div>
+                    <span class="confidence-text" id="predConfidenceHMM">—</span>
+                </div>
+            </div>
+
+            <div class="model-card svm-card">
+                <div class="model-header">
+                    <div class="model-icon">⚡</div>
+                    <div class="model-label">SVM</div>
+                    <div class="model-tag">Kernel</div>
+                </div>
+                <div class="model-result">
+                    <div class="number-display" id="predNumberSVM">—</div>
+                    <div class="token-display" id="predTokensSVM">waiting</div>
+                </div>
+                <div class="model-footer">
+                    <div class="confidence-bar"><div class="confidence-fill" id="confBarSVM"></div></div>
+                    <span class="confidence-text" id="predConfidenceSVM">—</span>
+                </div>
+            </div>
+
+            <div class="model-card dnn-card">
+                <div class="model-header">
+                    <div class="model-icon">🧠</div>
+                    <div class="model-label">DNN</div>
+                    <div class="model-tag">Neural</div>
+                </div>
+                <div class="model-result">
+                    <div class="number-display" id="predNumberDNN">—</div>
+                    <div class="token-display" id="predTokensDNN">waiting</div>
+                </div>
+                <div class="model-footer">
+                    <div class="confidence-bar"><div class="confidence-fill" id="confBarDNN"></div></div>
+                    <span class="confidence-text" id="predConfidenceDNN">—</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with HMM + Grammar-Constrained Viterbi Decoding</p>
+            <p class="footnote">13 Sanskrit tokens → 100 numbers (0–99)</p>
+        </footer>
+    </div>
+
+    <script>
+        let audioBlob = null;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const $ = id => document.getElementById(id);
+        const recordBtn = $('recordButton');
+        const indicator = $('recordingIndicator');
+        const playback = $('audioPlayback');
+        const fileInput = $('fileUpload');
+        const fileName = $('fileName');
+        const predictBtn = $('predictButton');
+        const resultCard = $('resultCard');
+
+        recordBtn.addEventListener('click', toggleRecording);
+
+        async function toggleRecording(e) {
+            e.preventDefault();
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = ev => audioChunks.push(ev.data);
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        playback.src = URL.createObjectURL(audioBlob);
+                        playback.classList.remove('hidden');
+                        predictBtn.disabled = false;
+                        recordBtn.querySelector('.text').innerText = "Record Again";
+                        recordBtn.classList.remove('recording');
+                        indicator.classList.add('hidden');
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    indicator.classList.remove('hidden');
+                    recordBtn.classList.add('recording');
+                    recordBtn.querySelector('.text').innerText = "Stop";
+                    playback.classList.add('hidden');
+                    resultCard.classList.add('hidden');
+                } catch (err) {
+                    alert("🎤 Microphone access required.");
+                }
+            } else {
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                }
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                audioBlob = e.target.files[0];
+                fileName.innerText = e.target.files[0].name;
+                playback.src = URL.createObjectURL(audioBlob);
+                playback.classList.remove('hidden');
+                predictBtn.disabled = false;
+            }
+        });
+
+        predictBtn.addEventListener('click', async () => {
+            if (!audioBlob) return;
+            
+            predictBtn.querySelector('.btn-text').classList.add('hidden');
+            predictBtn.querySelector('.btn-loader').classList.remove('hidden');
+            predictBtn.disabled = true;
+            resultCard.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'test_audio.wav');
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const text = await response.text();
+                    try { alert("Error: " + JSON.parse(text).error); }
+                    catch(e) { alert("Server error! Check terminal."); }
+                    return;
+                }
+                const data = await response.json();
+                if (data.error) { alert(data.error); return; }
+
+                function updateCard(prefix, d) {
+                    if (!d) return;
+                    $(prefix + 'Number' + prefix.slice(-3).toUpperCase()).innerText = 
+                        d.number !== -1 ? d.number : "?";
+                }
+
+                if (data.hmm) {
+                    $('predNumberHMM').innerText = data.hmm.number !== -1 ? data.hmm.number : "?";
+                    $('predTokensHMM').innerText = data.hmm.tokens.join(' · ');
+                    $('predConfidenceHMM').innerText = `Score: ${data.hmm.score.toFixed(1)}`;
+                    // HMM score is log-likelihood, normalize for display
+                    let hmmPct = Math.min(100, Math.max(5, (data.hmm.score + 500) / 5));
+                    $('confBarHMM').style.width = hmmPct + '%';
+                }
+                if (data.svm) {
+                    $('predNumberSVM').innerText = data.svm.number !== -1 ? data.svm.number : "?";
+                    $('predTokensSVM').innerText = data.svm.tokens.join(' · ');
+                    $('predConfidenceSVM').innerText = `${data.svm.score.toFixed(1)}%`;
+                    $('confBarSVM').style.width = data.svm.score + '%';
+                }
+                if (data.dnn) {
+                    $('predNumberDNN').innerText = data.dnn.number !== -1 ? data.dnn.number : "?";
+                    $('predTokensDNN').innerText = data.dnn.tokens.join(' · ');
+                    $('predConfidenceDNN').innerText = `${data.dnn.score.toFixed(1)}%`;
+                    $('confBarDNN').style.width = data.dnn.score + '%';
+                }
+                resultCard.classList.remove('hidden');
+            } catch (err) {
+                alert("Network error: Is Flask running?");
+            } finally {
+                predictBtn.querySelector('.btn-text').classList.remove('hidden');
+                predictBtn.querySelector('.btn-loader').classList.add('hidden');
+                predictBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

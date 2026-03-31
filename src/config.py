@@ -54,7 +54,7 @@ VOCAB = [
     "nava",      # 9
     "dasha",     # 10
     "vimsati",   # 20
-    "shata",     # 100  (for future 0-999 extension)
+    "shata",     # 100
 ]
 
 TOKEN_TO_IDX = {tok: i for i, tok in enumerate(VOCAB)}
@@ -74,13 +74,13 @@ HMM_STATES = {
     "ashta":   7,
     "nava":    6,
     "dasha":   6,
-    "vimsati": 9,
-    "shata":   6,
+    "vimsati": 8,
+    "shata":   5,
     "SIL":     3,
 }
 
-GMM_MIXTURES       = 1        # Start with 1; increase to 3 or 5 if data allows
-BAUM_WELCH_ITERS   = 15       # EM iterations for training
+GMM_MIXTURES       = 3        # 3 mixtures to leverage large synthetic dataset
+BAUM_WELCH_ITERS   = 25       # Stable EM convergence
 CONVERGENCE_THRESH = 1e-4     # Log-likelihood convergence threshold
 
 # ── Baseline Model Settings ───────────────────────────────────────────────────

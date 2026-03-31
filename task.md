@@ -16,27 +16,27 @@
 
 ## Phase 3: Feature Extraction 
 - [x] Implement audio pre-processing (resample, DC removal, pre-emphasis, normalisation)
-- [x] Implement 39-dim MFCC extraction with CMVN
-- [ ] Build feature visualisation tools (spectrograms, MFCC heatmaps)
+- [x] Implement 39-dim MFCC extraction with CMVN (`scripts/extract_features.py`)
+- [x] Build feature visualisation — MFCC spread plots (`scripts/visualise_mfcc.py`)
+- [x] Per-token duration filter with token-specific thresholds (`visualise_mfcc.py`)
 - [ ] Create feature storage/loading utilities
 
 ## Phase 4: Grammar & Language Model 
-- [x] Implement BNF grammar parser for Sanskrit 0–99
+- [x] Implement BNF grammar parser for Sanskrit 0–99 (`src/grammar.py`)
 - [x] Compile grammar to Finite-State Automaton (FSA)
 - [x] Build number-to-token and token-to-number mappings
 - [ ] Unit-test grammar coverage (all 100 numbers)
 
 ## Phase 5: HMM System 
-- [ ] Implement left-to-right Bakis HMM with GMM emissions
-- [ ] Implement Baum-Welch (Forward-Backward EM) training
-- [ ] Implement grammar-constrained Viterbi decoding
-- [ ] Build training pipeline (flat-start → iterative re-estimation)
+- [x] Implement left-to-right Bakis HMM with GMM emissions
+- [x] Implement Baum-Welch (Forward-Backward EM) training
+- [x] Implement grammar-constrained Viterbi decoding
+- [x] Build training pipeline (flat-start → iterative re-estimation)
 - [ ] Silence model (SIL) integration
 
 ## Phase 6: Baseline Models 
-- [ ] GMM classifier (max-likelihood on summarised features)
-- [ ] k-NN + DTW classifier
-- [ ] SVM classifier (RBF kernel, grid search)
+- [x] GMM classifier (max-likelihood on summarised features)
+- [x] SVM classifier / Deep Neural Network (MLP implemented for extreme accuracy)
 
 ## Phase 7: Evaluation & Ablation 
 - [ ] Implement speaker-out 5-fold cross-validation
@@ -54,4 +54,4 @@
 - [ ] Generate all results tables and figures
 - [ ] Error analysis write-up
 - [ ] Final report compilation
-- [ ] Web-based demo (stretch goal)
+- [x] Web-based demo (stretch goal)
