@@ -1,17 +1,20 @@
 """
 SankhyaVox – Demo: Data Processing Pipeline.
 
-Runs the full data pipeline end-to-end:
-  1. Convert raw audio from data/ → data_processed/human/raw/
-  2. Segment repeated-utterance recordings into individual clips
-  3. Run segment QA
-  4. Extract 39-dim MFCC features
-  5. Load the processed data into a SankhyaVoxDataset and print a summary
+Selectively runs data pipelines based on CLI flags:
+  --human      Convert, segment, QA, extract features, generate CSV for human data
+  --tts        Generate TTS segments, extract features, generate CSV
+  --augmented  (reserved for future augmentation pipeline)
+
+If no flags are given, all enabled routes run.
 
 Usage:
-    python scripts/demo_data_process.py
+    python scripts/demo_data_process.py --human
+    python scripts/demo_data_process.py --tts
+    python scripts/demo_data_process.py --human --tts
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -21,61 +24,94 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dataset import DataPipeline, SankhyaVoxDataset
 
 
-def main():
-    pipe = DataPipeline()
+def run_human(pipe: DataPipeline) -> None:
+    """Full human data pipeline: convert → segment → QA → features → CSV."""
 
-    # ── Step 1: Convert raw audio to standardised 16 kHz mono WAV ─────────
     print("=" * 70)
-    print("  Step 1: Converting raw audio")
+    print("  Human: Converting raw audio")
     print("=" * 70)
     n_converted = pipe.convert()
     print(f"  Converted {n_converted} files.\n")
 
-    # ── Step 2: Segment into individual utterances ────────────────────────
     print("=" * 70)
-    print("  Step 2: Segmenting recordings")
+    print("  Human: Segmenting recordings")
     print("=" * 70)
     n_segments = pipe.segment()
     print(f"  Total segments: {n_segments}\n")
 
-    # ── Step 3: Run segment QA ────────────────────────────────────────────
     print("=" * 70)
-    print("  Step 3: Segment QA")
+    print("  Human: Segment QA")
     print("=" * 70)
     issues = pipe.validate(source="human", mode="qa")
     print(f"  Issues found: {len(issues)}\n")
 
-    # ── Step 4: Extract MFCC features ─────────────────────────────────────
     print("=" * 70)
-    print("  Step 4: Extracting human features")
+    print("  Human: Extracting MFCC features")
     print("=" * 70)
     n_features = pipe.extract_features("human")
     print(f"  Features extracted: {n_features}\n")
 
-    # ── Step 5: Generate TTS data ─────────────────────────────────────────
     print("=" * 70)
-    print("  Step 5: Generating TTS data")
+    print("  Human: Generating metadata CSV")
     print("=" * 70)
-    try:
-        n_tts = pipe.generate_tts()
-        print(f"  TTS files generated: {n_tts}")
-        print("  Extracting TTS features...")
-        n_tts_feat = pipe.extract_features("tts")
-        print(f"  TTS features extracted: {n_tts_feat}\n")
-    except Exception as e:
-        print(f"  TTS generation skipped: {e}")
-        print("  (Install edge_tts to enable: pip install edge_tts)\n")
-
-    # ── Step 6: Generate metadata CSVs ────────────────────────────────────
-    print("=" * 70)
-    print("  Step 6: Generating metadata CSVs")
-    print("=" * 70)
-    pipe.generate_all_csvs()
+    pipe.generate_csv("human")
     print()
 
-    # ── Step 7: Load into SankhyaVoxDataset ───────────────────────────────
+
+def run_tts(pipe: DataPipeline) -> None:
+    """TTS pipeline: generate segments → extract features → CSV."""
+
     print("=" * 70)
-    print("  Step 7: Loading SankhyaVoxDataset")
+    print("  TTS: Generating synthetic data")
+    print("=" * 70)
+    n_tts = pipe.generate_tts()
+    print(f"  TTS files generated: {n_tts}\n")
+
+    print("=" * 70)
+    print("  TTS: Extracting MFCC features")
+    print("=" * 70)
+    n_features = pipe.extract_features("tts")
+    print(f"  TTS features extracted: {n_features}\n")
+
+    print("=" * 70)
+    print("  TTS: Generating metadata CSV")
+    print("=" * 70)
+    pipe.generate_csv("tts")
+    print()
+
+
+def run_augmented(pipe: DataPipeline) -> None:
+    """Augmented pipeline (placeholder)."""
+    print("=" * 70)
+    print("  Augmented: Not yet implemented")
+    print("=" * 70)
+    print()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="SankhyaVox data processing pipeline")
+    parser.add_argument("--human", action="store_true", help="Run the human data pipeline")
+    parser.add_argument("--tts", action="store_true", help="Run the TTS data pipeline")
+    parser.add_argument("--augmented", action="store_true", help="Run the augmented data pipeline (placeholder)")
+    args = parser.parse_args()
+
+    # If no flags given, run all
+    run_all = not (args.human or args.tts or args.augmented)
+
+    pipe = DataPipeline()
+
+    if args.human or run_all:
+        run_human(pipe)
+
+    if args.tts or run_all:
+        run_tts(pipe)
+
+    if args.augmented or run_all:
+        run_augmented(pipe)
+
+    # ── Load into SankhyaVoxDataset ───────────────────────────────────────
+    print("=" * 70)
+    print("  Loading SankhyaVoxDataset")
     print("=" * 70)
     ds = SankhyaVoxDataset()
     print(ds.summary())
