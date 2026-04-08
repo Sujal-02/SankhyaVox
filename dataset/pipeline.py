@@ -191,11 +191,11 @@ class DataPipeline:
         out_dir: Optional[str] = None,
     ) -> int:
         """Segment raw repeated-utterance recordings into individual clips."""
-        from dataset.segmentor import batch_segment
+        from dataset.segmentor import segment_all
 
         rd = raw_dir or str(self.human_raw_dir)
         od = out_dir or str(self.human_segment_dir)
-        return batch_segment(rd, od)
+        return segment_all(rd, od)
 
     # ── TTS Generation ────────────────────────────────────────────────────
 
@@ -204,6 +204,56 @@ class DataPipeline:
         from dataset.generator import generate
 
         return generate(str(self.tts_segment_dir), reps=reps, **kwargs)
+
+    # ── Augmentation ──────────────────────────────────────────────────────
+
+    def augment(self, source: str = "human") -> int:
+        """
+        Augment segmented WAVs with pitch/speed permutations.
+
+        Parameters
+        ----------
+        source : str
+            One of ``"human"``, ``"tts"``, ``"all"``, or an explicit path
+            to a single speaker segment directory (e.g.
+            ``data_processed/human/segments/S02``).
+
+        Returns
+        -------
+        Total number of augmented files written.
+        """
+        from dataset.augmentor import augment as _augment
+
+        if source == "all":
+            return self.augment("human") + self.augment("tts")
+
+        # Explicit path to a specific speaker folder
+        p = Path(source)
+        if p.is_dir():
+            return _augment(str(p), output_root=str(self.aug_segment_dir))
+
+        # Walk known category directories
+        if source == "human":
+            seg_root = self.human_segment_dir
+        elif source == "tts":
+            seg_root = self.tts_segment_dir
+        else:
+            raise ValueError(
+                f"Unknown source '{source}'. Use 'human', 'tts', 'all', "
+                "or a path to a speaker segment directory."
+            )
+
+        subjects = sorted(
+            d for d in Path(seg_root).iterdir() if d.is_dir()
+        )
+        if not subjects:
+            print(f"No speaker directories found in {seg_root}")
+            return 0
+
+        total = 0
+        for subj in subjects:
+            total += _augment(str(subj), output_root=str(self.aug_segment_dir))
+        return total
 
     # ── Validation ────────────────────────────────────────────────────────
 
@@ -347,7 +397,7 @@ class DataPipeline:
         ``<processed_dir>/<category>.csv``.
 
         Columns: npy_path, wav_path, speaker, numeric_id, label,
-        sanskrit_label, rep
+        sanskrit_label, rep[, aug_pitch, aug_speed]
         """
         seg_attr, feat_attr = self._CATEGORY_MAP[category]
         feat_dir = Path(getattr(self, feat_attr))
@@ -356,10 +406,24 @@ class DataPipeline:
         rows: List[Dict[str, Any]] = []
         for npy_path in sorted(feat_dir.rglob("*.npy")):
             parts = npy_path.stem.split("_")
-            if len(parts) != 3 or not parts[2].isdigit():
+
+            # Augmented files: augS01_000_01_p0_f1  → 5 parts
+            if len(parts) == 5 and parts[3].startswith("p") and parts[4].startswith("f"):
+                speaker = parts[0]          # "augS01"
+                numeric_id = parts[1]       # "000"
+                rep_str = parts[2]          # "01"
+                aug_pitch = parts[3]        # "p0"
+                aug_speed = parts[4]        # "f1"
+            elif len(parts) == 3 and parts[2].isdigit():
+                speaker, numeric_id, rep_str = parts
+                aug_pitch = None
+                aug_speed = None
+            else:
                 continue
 
-            speaker, numeric_id, rep_str = parts
+            if not rep_str.isdigit():
+                continue
+
             token = NUMERIC_ID_TO_TOKEN.get(numeric_id)
             if token is None:
                 continue
@@ -367,7 +431,7 @@ class DataPipeline:
             rel = npy_path.relative_to(feat_dir)
             wav_path = seg_dir / rel.with_suffix(".wav")
 
-            rows.append({
+            row: Dict[str, Any] = {
                 "npy_path":       npy_path.relative_to(self.processed_dir).as_posix(),
                 "wav_path":       wav_path.relative_to(self.processed_dir).as_posix(),
                 "speaker":        speaker,
@@ -375,7 +439,11 @@ class DataPipeline:
                 "label":          TOKEN_TO_VALUE.get(token, -1),
                 "sanskrit_label": token,
                 "rep":            int(rep_str),
-            })
+            }
+            if aug_pitch is not None:
+                row["aug_pitch"] = aug_pitch
+                row["aug_speed"] = aug_speed
+            rows.append(row)
 
         csv_path = self.processed_dir / f"{category}.csv"
         pd.DataFrame(rows).to_csv(csv_path, index=False)

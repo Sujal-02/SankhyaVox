@@ -178,16 +178,112 @@ class SankhyaVoxDataset:
         return f"SankhyaVoxDataset(samples={len(self)}, {cat_str})"
 
     def summary(self) -> str:
-        """Return a formatted summary of the dataset contents."""
+        """Return a detailed formatted summary of the dataset contents.
+
+        For each category present, prints a table with speakers as columns,
+        tokens as rows, and sample counts as cell values plus a Total column.
+        Then prints a consolidated table aggregating across all speakers per
+        category.
+        """
+        if self._df.empty:
+            return repr(self) + "\n  (no samples loaded)"
+
         lines = [repr(self)]
-        if not self._df.empty:
-            lines.append(f"  Speakers: {', '.join(self.speakers)}")
-            lines.append(f"  Tokens:   {', '.join(self.tokens)}")
-            for cat in self.CATEGORIES:
-                sub = self._df[self._df["category"] == cat]
-                if not sub.empty:
-                    lines.append(
-                        f"  [{cat}] {len(sub)} samples, "
-                        f"{sub['speaker'].nunique()} speakers"
-                    )
+        lines.append(f"  Speakers: {', '.join(self.speakers)}")
+        lines.append(f"  Tokens:   {', '.join(self.tokens)}")
+        lines.append("")
+
+        # Build token display labels: "token (label)"
+        token_label_map = (
+            self._df[["sanskrit_label", "label"]]
+            .drop_duplicates()
+            .sort_values("label")
+        )
+        ordered_tokens = token_label_map["sanskrit_label"].tolist()
+        token_display = {
+            row.sanskrit_label: f"{row.sanskrit_label} ({row.label})"
+            for row in token_label_map.itertuples()
+        }
+
+        # ── Per-category detail tables ────────────────────────────────────
+        for cat in self.CATEGORIES:
+            sub = self._df[self._df["category"] == cat]
+            if sub.empty:
+                continue
+
+            speakers = sorted(sub["speaker"].unique())
+            lines.append(f"  ┌─ {cat.upper()} ({len(sub)} samples, "
+                         f"{len(speakers)} speakers) ─────────")
+
+            # Build cross-tab: rows=token, cols=speaker
+            ct = pd.crosstab(sub["sanskrit_label"], sub["speaker"])
+            # Ensure all tokens and speakers present
+            ct = ct.reindex(index=ordered_tokens, columns=speakers, fill_value=0)
+            ct["Total"] = ct.sum(axis=1)
+
+            # Format header
+            row_label_width = max(len(d) for d in token_display.values()) + 2
+            col_width = max(max((len(s) for s in speakers), default=5), 5) + 1
+            total_width = max(5, len("Total")) + 1
+
+            header = "  " + "".rjust(row_label_width)
+            for sp in speakers:
+                header += sp.rjust(col_width)
+            header += "Total".rjust(total_width)
+            lines.append(header)
+            lines.append("  " + "─" * (row_label_width + col_width * len(speakers) + total_width))
+
+            for tok in ordered_tokens:
+                display = token_display[tok]
+                row_str = "  " + display.rjust(row_label_width)
+                for sp in speakers:
+                    row_str += str(ct.at[tok, sp]).rjust(col_width)
+                row_str += str(ct.at[tok, "Total"]).rjust(total_width)
+                lines.append(row_str)
+
+            # Column totals
+            lines.append("  " + "─" * (row_label_width + col_width * len(speakers) + total_width))
+            totals_row = "  " + "Total".rjust(row_label_width)
+            for sp in speakers:
+                totals_row += str(int(ct[sp].sum())).rjust(col_width)
+            totals_row += str(int(ct["Total"].sum())).rjust(total_width)
+            lines.append(totals_row)
+            lines.append("")
+
+        # ── Consolidated table across categories ──────────────────────────
+        cats_present = [c for c in self.CATEGORIES if c in self._df["category"].values]
+        if len(cats_present) > 1:
+            lines.append("  ┌─ CONSOLIDATED (all categories) ─────────")
+
+            ct_all = pd.crosstab(self._df["sanskrit_label"], self._df["category"])
+            ct_all = ct_all.reindex(index=ordered_tokens, columns=cats_present, fill_value=0)
+            ct_all["Total"] = ct_all.sum(axis=1)
+
+            row_label_width = max(len(d) for d in token_display.values()) + 2
+            cat_width = max(max((len(c) for c in cats_present), default=9), 9) + 1
+            total_width = max(5, len("Total")) + 1
+
+            header = "  " + "".rjust(row_label_width)
+            for c in cats_present:
+                header += c.rjust(cat_width)
+            header += "Total".rjust(total_width)
+            lines.append(header)
+            lines.append("  " + "─" * (row_label_width + cat_width * len(cats_present) + total_width))
+
+            for tok in ordered_tokens:
+                display = token_display[tok]
+                row_str = "  " + display.rjust(row_label_width)
+                for c in cats_present:
+                    row_str += str(ct_all.at[tok, c]).rjust(cat_width)
+                row_str += str(ct_all.at[tok, "Total"]).rjust(total_width)
+                lines.append(row_str)
+
+            lines.append("  " + "─" * (row_label_width + cat_width * len(cats_present) + total_width))
+            totals_row = "  " + "Total".rjust(row_label_width)
+            for c in cats_present:
+                totals_row += str(int(ct_all[c].sum())).rjust(cat_width)
+            totals_row += str(int(ct_all["Total"].sum())).rjust(total_width)
+            lines.append(totals_row)
+            lines.append("")
+
         return "\n".join(lines)

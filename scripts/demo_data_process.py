@@ -4,14 +4,18 @@ SankhyaVox – Demo: Data Processing Pipeline.
 Selectively runs data pipelines based on CLI flags:
   --human      Convert, segment, QA, extract features, generate CSV for human data
   --tts        Generate TTS segments, extract features, generate CSV
-  --augmented  (reserved for future augmentation pipeline)
+  --augment    Augment segments and extract features + CSV for augmented data
+               Accepts: human, tts, all, or a path to a speaker segment dir.
+               If no value given, defaults to "all".
 
 If no flags are given, all enabled routes run.
 
 Usage:
     python scripts/demo_data_process.py --human
     python scripts/demo_data_process.py --tts
-    python scripts/demo_data_process.py --human --tts
+    python scripts/demo_data_process.py --augment human
+    python scripts/demo_data_process.py --augment data_processed/human/segments/S02
+    python scripts/demo_data_process.py --human --tts --augment all
 """
 
 import argparse
@@ -80,11 +84,25 @@ def run_tts(pipe: DataPipeline) -> None:
     print()
 
 
-def run_augmented(pipe: DataPipeline) -> None:
-    """Augmented pipeline (placeholder)."""
+def run_augmented(pipe: DataPipeline, source: str) -> None:
+    """Augmentation pipeline: augment segments → extract features → CSV."""
+
     print("=" * 70)
-    print("  Augmented: Not yet implemented")
+    print(f"  Augmented: Augmenting segments (source={source})")
     print("=" * 70)
+    n_aug = pipe.augment(source)
+    print(f"  Augmented files: {n_aug}\n")
+
+    print("=" * 70)
+    print("  Augmented: Extracting MFCC features")
+    print("=" * 70)
+    n_features = pipe.extract_features("augmented")
+    print(f"  Augmented features extracted: {n_features}\n")
+
+    print("=" * 70)
+    print("  Augmented: Generating metadata CSV")
+    print("=" * 70)
+    pipe.generate_csv("augmented")
     print()
 
 
@@ -92,11 +110,19 @@ def main():
     parser = argparse.ArgumentParser(description="SankhyaVox data processing pipeline")
     parser.add_argument("--human", action="store_true", help="Run the human data pipeline")
     parser.add_argument("--tts", action="store_true", help="Run the TTS data pipeline")
-    parser.add_argument("--augmented", action="store_true", help="Run the augmented data pipeline (placeholder)")
+    parser.add_argument(
+        "--augment",
+        nargs="?",
+        const="all",
+        default=None,
+        metavar="SOURCE",
+        help="Run augmentation pipeline. SOURCE: human, tts, all (default), "
+             "or a path to a speaker segment directory.",
+    )
     args = parser.parse_args()
 
     # If no flags given, run all
-    run_all = not (args.human or args.tts or args.augmented)
+    run_all = not (args.human or args.tts or args.augment is not None)
 
     pipe = DataPipeline()
 
@@ -106,8 +132,9 @@ def main():
     if args.tts or run_all:
         run_tts(pipe)
 
-    if args.augmented or run_all:
-        run_augmented(pipe)
+    if args.augment is not None or run_all:
+        aug_source = args.augment if args.augment is not None else "all"
+        run_augmented(pipe, aug_source)
 
     # ── Load into SankhyaVoxDataset ───────────────────────────────────────
     print("=" * 70)
@@ -135,9 +162,11 @@ def main():
         print("  No samples found. Ensure data/ contains raw recordings.")
 
     print("\n" + "=" * 70)
-    print("  Demo complete.")
+    print("  Data Preprocessing complete.")
     print("=" * 70)
 
 
 if __name__ == "__main__":
+    # Example: process human pipeline and augment only S02
+    #   python scripts/demo_data_process.py --human --augment data_processed/human/segments/S02
     main()

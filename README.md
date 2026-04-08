@@ -11,12 +11,14 @@ SankhyaVox/
 ├── data_processed/       # Runtime-generated outputs (git-ignored)
 │   ├── human/            #   converted WAVs, segments, MFCC features
 │   ├── tts/              #   TTS-generated audio and features
-│   ├── augmented/        #   augmented data (reserved)
+│   ├── augmented/        #   pitch/speed-augmented segments and features
 │   ├── human.csv         #   metadata index for human samples
-│   └── tts.csv           #   metadata index for TTS samples
+│   ├── tts.csv           #   metadata index for TTS samples
+│   └── augmented.csv     #   metadata index for augmented samples
 ├── dataset/              # Python module: data pipeline + dataset class
 │   ├── dataset.py        #   SankhyaVoxDataset (CSV-backed, indexed)
-│   ├── pipeline.py       #   DataPipeline (convert, segment, extract, CSV gen, infer)
+│   ├── pipeline.py       #   DataPipeline (convert, segment, augment, extract, CSV gen, infer)
+│   ├── augmentor.py      #   Pitch/speed augmentation logic
 │   ├── generator.py      #   TTS generation logic
 │   └── segmentor.py      #   VAD segmentation + QA
 ├── models/               # Model definitions (committed code, not weights)
@@ -114,6 +116,37 @@ pipe.generate_tts()              # requires: pip install edge_tts
 pipe.extract_features("tts")
 ```
 
+#### Augmented data
+
+Augmentation applies all permutations of pitch shifts and speed factors
+(configured in `src/config.py` as `AUG_PITCHES` and `AUG_SPEEDS`) to
+existing segmented WAVs.
+
+```python
+# Augment all human speakers
+pipe.augment("human")            # → data_processed/augmented/segments/augS01/ ...
+
+# Augment a single speaker
+pipe.augment("data_processed/human/segments/S02")
+
+# Augment TTS speakers
+pipe.augment("tts")
+
+# Augment everything (human + TTS)
+pipe.augment("all")
+
+# Then extract features and generate CSV
+pipe.extract_features("augmented")
+pipe.generate_csv("augmented")
+```
+
+Output naming convention:
+```
+augmented/segments/augS01/augS01_000_01_p0_f0.wav
+                          ^^^^^^           ^^^^^
+                          aug prefix       pitch/speed indices
+```
+
 #### Loading the dataset
 
 ```python
@@ -123,6 +156,28 @@ sample = ds.human[0]         # human-only index
 sample = ds.tts[0]           # tts-only index
 print(ds.summary())
 print(ds.df.head())          # pandas DataFrame with full metadata
+```
+
+#### CLI usage
+
+```bash
+# Full human pipeline (convert → segment → QA → features → CSV)
+python scripts/demo_data_process.py --human
+
+# TTS pipeline
+python scripts/demo_data_process.py --tts
+
+# Augment all categories
+python scripts/demo_data_process.py --augment
+
+# Augment only human data
+python scripts/demo_data_process.py --augment human
+
+# Augment a specific speaker
+python scripts/demo_data_process.py --augment data_processed/human/segments/S02
+
+# Combine: process human pipeline then augment S02
+python scripts/demo_data_process.py --human --augment data_processed/human/segments/S02
 ```
 
 #### Single-file inference (live testing)

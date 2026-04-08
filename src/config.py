@@ -63,7 +63,7 @@ APPLY_CMVN         = True     # Per-utterance cepstral mean-variance normalisati
 # ═══════════════════════════════════════════════════════════════════════════════
 
 EXPECTED_REPS       = 10      # Repetitions per raw recording file
-ENERGY_THRESHOLD    = 0.015   # Speech threshold relative to 95th-percentile RMS
+ENERGY_THRESHOLD    = 0.3     # Adaptive threshold ratio between noise floor and peak
 MIN_SPEECH_DUR_S    = 0.20    # Minimum speech segment duration (seconds)
 MIN_SILENCE_DUR_S   = 0.40    # Minimum silence gap between repetitions (seconds)
 PAD_MS              = 80      # Silence padding kept around each segment (ms)
@@ -145,6 +145,14 @@ TTS_VOICES = {
 TTS_RATES   = ["-10%", "-5%", "+0%", "+5%", "+10%"]
 TTS_PITCHES = ["-2Hz", "-1Hz", "+0Hz", "+1Hz", "+2Hz"]
 TTS_REPS    = 10   # Repetitions per token per voice
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AUGMENTATION
+# Pitch shifts (semitones) and speed factors whose permutations are applied
+# ═══════════════════════════════════════════════════════════════════════════════
+
+AUG_PITCHES = [-2, 0, +2]         # Semitones (0 = unchanged pitch)
+AUG_SPEEDS  = [0.9, 1.0, 1.1]    # Speed/rate factors (1.0 = unchanged speed)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HMM MODEL
