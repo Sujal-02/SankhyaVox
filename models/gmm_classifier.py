@@ -29,9 +29,11 @@ class GMMClassifier:
     def __init__(
         self,
         n_components: int = 8,
+        reg_covar: float = 1e-6,  # Added reg_covar parameter
         checkpoint_path: Optional[str] = None,
     ):
         self.n_components = n_components
+        self.reg_covar = reg_covar  # Store reg_covar
         self.models: dict[int, GaussianMixture] = {}
         self.scaler = StandardScaler()
 
@@ -97,6 +99,7 @@ class GMMClassifier:
                 max_iter=200,
                 n_init=3,
                 random_state=42,
+                reg_covar=self.reg_covar, # Pass reg_covar here
             )
             gmm.fit(data)
             self.models[label] = gmm
@@ -120,6 +123,7 @@ class GMMClassifier:
                 "n_components": self.n_components,
                 "models": self.models,
                 "scaler": self.scaler,
+                "reg_covar": self.reg_covar, # Save reg_covar
             }, f)
         print(f"Saved GMMClassifier -> {path}")
 
@@ -130,4 +134,5 @@ class GMMClassifier:
         self.n_components = data["n_components"]
         self.models = data["models"]
         self.scaler = data["scaler"]
+        self.reg_covar = data.get("reg_covar", 1e-6) # Load reg_covar with default
         print(f"Loaded GMMClassifier <- {path}")

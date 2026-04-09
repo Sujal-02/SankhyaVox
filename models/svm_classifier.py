@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -120,10 +121,22 @@ class SVMClassifier:
                 verbose=1,
             )
             gs.fit(data, labels)
+
+            # Report all candidate results
+            results = pd.DataFrame(gs.cv_results_)
+            results = results.sort_values("rank_test_score")
+            print("\nGrid Search Results (all candidates):")
+            print("-" * 60)
+            for _, row in results.iterrows():
+                print(f"  C={row['param_C']:<8}  gamma={row['param_gamma']:<10}  "
+                      f"mean_acc={row['mean_test_score']:.4f} ± {row['std_test_score']:.4f}  "
+                      f"rank={int(row['rank_test_score'])}")
+            print("-" * 60)
+
             self.model = gs.best_estimator_
             self.C = gs.best_params_["C"]
             self.gamma = gs.best_params_["gamma"]
-            print(f"Grid search best: C={self.C}, gamma={self.gamma}, "
+            print(f"Best: C={self.C}, gamma={self.gamma}, "
                   f"acc={gs.best_score_:.3f}")
         else:
             self.model = SVC(
