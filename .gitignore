@@ -1,6 +1,6 @@
 /data
 /data_processed
-/checkpoints
+
 __pycache__/
 *.pyc
 .venv/
