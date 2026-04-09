@@ -30,7 +30,7 @@ SankhyaVox/
 │   ├── train_gmm.ipynb          # GMM train/eval on augmented data
 │   ├── train_knn_dtw.ipynb      # k-NN+DTW train/eval on augmented data
 │   └── train_svm.ipynb          # SVM train/eval on augmented data
-├── checkpoints/          # Saved model weights (git-ignored, auto-generated)
+├── checkpoints/          # DVC-tracked saved model weights (git-ignored, auto-generated)
 ├── results/              # Evaluation outputs
 ├── scripts/              # CLI entry points and demo scripts
 ├── src/                  # Core modules
