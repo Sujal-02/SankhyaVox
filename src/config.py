@@ -159,14 +159,41 @@ AUG_SPEEDS  = [0.9, 1.0, 1.1]    # Speed/rate factors (1.0 = unchanged speed)
 # Number of emitting states per word model (matched to phoneme complexity)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# State count per token — sized to phonetic complexity
 HMM_STATES = {
-    "shunya":  6,  "eka":     5,  "dvi":     5,  "tri":     5,
-    "catur":   7,  "pancha":  7,  "shat":    5,  "sapta":   7,
-    "ashta":   7,  "nava":    6,  "dasha":   6,  "vimsati": 9,
-    "shata":   6,  "SIL":     3,
+    "shunya":  5,
+    "eka":     4,   # bumped from 3 — was confused with tri
+    "dvi":     4,   # bumped from 3 — was confused with tri
+    "tri":     3,
+    "catur":   5,
+    "pancha":  5,
+    "shat":    4,   # bumped from 3 — was confused with shata
+    "sapta":   5,
+    "ashta":   5,
+    "nava":    4,
+    "dasha":   4,
+    "vimsati": 6,
+    "shata":   4,
 }
-GMM_MIXTURES       = 1        # Gaussian mixture components per state
-BAUM_WELCH_ITERS   = 15       # EM iterations for training
+
+# Per-token GMM mixtures — more for confused tokens
+GMM_MIXTURES = {
+    "shunya":  2,
+    "eka":     4,   # confused with tri/pancha — more mixtures
+    "dvi":     4,   # confused with tri — more mixtures
+    "tri":     3,
+    "catur":   2,
+    "pancha":  4,   # confused with eka — more mixtures
+    "shat":    4,   # confused with shata — more mixtures
+    "sapta":   2,
+    "ashta":   2,
+    "nava":    2,
+    "dasha":   2,
+    "vimsati": 2,
+    "shata":   4,   # confused with shat — more mixtures
+}
+
+BAUM_WELCH_ITERS   = 150       # EM iterations for training
 CONVERGENCE_THRESH = 1e-4     # Log-likelihood convergence threshold
 
 # ═══════════════════════════════════════════════════════════════════════════════
