@@ -99,10 +99,13 @@ Speaker instruction sheet, audio format conversion (`DataPipeline.convert()`), V
 - Grammar-constrained Viterbi decoder
 - Silence model (SIL) integration
 
-### Phase 6 — Baseline Models
-- GMM classifier (max-likelihood on summarised features)
-- k-NN + DTW (Dynamic Time Warping distance)
-- SVM with RBF kernel (grid search C, γ)
+### Phase 6 ✅ — Baseline Models
+- GMM classifier — per-class GMM on 312-dim rich statistical features (mean/std/min/max/median/q25/q75/delta-mean), StandardScaler, 8 components, n_init=3
+- k-NN + DTW — static-MFCC-only (13-dim) with per-utterance z-norm, Sakoe-Chiba band constraint, inverse-distance-weighted voting, k=3
+- SVM (RBF kernel) — 352-dim features (mean/std/min/max/median/q10/q90/IQR/delta-abs-mean/log-frame-count), grid search over C∈{0.01..1000}, γ∈{1e-5..1}
+- All models follow a consistent interface: `__init__`, `_transform`, `fit`, `predict`, `save`, `load`
+- Per-model training notebooks: `train_gmm.ipynb`, `train_knn_dtw.ipynb`, `train_svm.ipynb`
+- Training protocol: train on augmented data (excl. held-out speaker), test on real human segments
 
 ### Phase 7 — Evaluation & Ablation
 - 5-fold speaker-out cross-validation (7 train / 2 val / 1 test)

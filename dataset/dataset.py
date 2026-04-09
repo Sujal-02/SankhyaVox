@@ -151,6 +151,17 @@ class SankhyaVoxDataset:
         filtered._df = self._df[mask].reset_index(drop=True)
         return filtered
 
+    def exclude_speakers(
+        self, speakers_to_exclude: List[str]
+    ) -> "SankhyaVoxDataset":
+        """Return a new dataset excluding the given speaker IDs."""
+        mask = ~self._df["speaker"].isin(speakers_to_exclude)
+        ds = SankhyaVoxDataset.__new__(SankhyaVoxDataset)
+        ds._root = self._root
+        ds._categories = self._categories
+        ds._df = self._df[mask].reset_index(drop=True)
+        return ds
+
     def split_by_speakers(
         self,
         train: List[str],

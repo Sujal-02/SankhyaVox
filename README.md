@@ -22,11 +22,14 @@ SankhyaVox/
 │   ├── generator.py      #   TTS generation logic
 │   └── segmentor.py      #   VAD segmentation + QA
 ├── models/               # Model definitions (committed code, not weights)
-│   ├── gmm_classifier.py #   GMM baseline (per-class max-likelihood)
-│   ├── knn_dtw_classifier.py  # k-NN + DTW baseline
-│   └── svm_classifier.py #   SVM baseline (RBF kernel, grid search)
+│   ├── gmm_classifier.py #   GMM baseline (312-dim features, per-class max-likelihood)
+│   ├── knn_dtw_classifier.py  # k-NN + DTW (Sakoe-Chiba, distance-weighted)
+│   └── svm_classifier.py #   SVM baseline (352-dim features, RBF, grid search)
 ├── notebooks/            # Jupyter notebooks (self-contained, no project imports)
-│   └── baseline_training.ipynb  # Train & evaluate all 3 baselines
+│   ├── baseline_training.ipynb  # Legacy combined baseline notebook
+│   ├── train_gmm.ipynb          # GMM train/eval on augmented data
+│   ├── train_knn_dtw.ipynb      # k-NN+DTW train/eval on augmented data
+│   └── train_svm.ipynb          # SVM train/eval on augmented data
 ├── checkpoints/          # Saved model weights (git-ignored, auto-generated)
 ├── results/              # Evaluation outputs
 ├── scripts/              # CLI entry points and demo scripts
@@ -238,6 +241,30 @@ dvc status -c
 | **Task Checklist** | `docs/guide/tasks.md` | Phase-by-phase checklist with completion status |
 | **Speaker Recording Guide** | `docs/guide/speaker_guide/` | LaTeX instruction sheet + PDF for distributing to speakers |
 | **Technical Report** | `docs/report/SankhyaVox_Technical_Report.tex` | Full system specification — grammar, HMM design, evaluation plan, baselines, bibliography |
+
+## Baseline Model Training
+
+Each baseline model has a dedicated self-contained notebook under `notebooks/`.
+The workflow for each:
+
+1. **Load** — augmented dataset only (`data_processed/augmented.csv`)
+2. **Exclude** — one human speaker's augmented data (e.g. `augS05`)
+3. **Train** — fit model on remaining augmented data
+4. **Save** — checkpoint to `checkpoints/`
+5. **Load** — reload from checkpoint
+6. **Test** — evaluate on the excluded speaker's real human segments (`data_processed/human.csv`)
+7. **Results** — accuracy, classification report, confusion matrix, per-class breakdown
+
+To train, open the notebook, paste the model class from `models/`, and run all cells.
+Change `TEST_SPEAKER` in the config cell to hold out a different speaker.
+
+### Model Feature Transforms
+
+| Model | Transform Dim | Key Features |
+|---|---|---|
+| GMM | 312 | mean, std, min, max, median, q25, q75, delta-mean per MFCC coeff |
+| k-NN+DTW | 13 × T | Static MFCCs only (strips Δ/ΔΔ), per-utterance z-normalisation |
+| SVM | 352 | mean, std, min, max, median, q10, q90, IQR, delta-abs-mean, log-duration |
 
 ## Notes
 

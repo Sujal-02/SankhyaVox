@@ -43,6 +43,15 @@
 - [x] k-NN + DTW classifier — `models/knn_dtw_classifier.py`
 - [x] SVM classifier (RBF kernel, grid search) — `models/svm_classifier.py`
 - [x] Baseline training notebook — `notebooks/baseline_training.ipynb`
+- [x] Rewrite models with richer feature transforms (`_transform`) and proper scaling
+  - GMM: 312-dim (mean/std/min/max/median/q25/q75/delta-mean), StandardScaler, 8 components
+  - k-NN+DTW: static-MFCC-only + z-norm, Sakoe-Chiba band, distance-weighted voting, k=3
+  - SVM: 352-dim (mean/std/min/max/median/q10/q90/IQR/delta-abs-mean/log-duration), wider grid search
+- [x] Self-contained per-model training notebooks
+  - `notebooks/train_gmm.ipynb`
+  - `notebooks/train_knn_dtw.ipynb`
+  - `notebooks/train_svm.ipynb`
+- [x] Training workflow: augmented data only, exclude one human speaker, test on real human segments
 
 ## Phase 7: Evaluation & Ablation 
 - [ ] Implement speaker-out 5-fold cross-validation
