@@ -94,9 +94,11 @@ class SankhyaHMM:
             n_iter=self.n_iter,
             covariance_type="diag",
             verbose=False,
+            init_params="mcw",   # skip random init of startprob/transmat
+            params="stmcw",      # but still update them during EM
         )
-        model.startprob_prior = self._bakis_startprob(n_states)
-        model.transmat_prior = self._bakis_transmat(n_states) + 1e-2
+        model.startprob_ = self._bakis_startprob(n_states)
+        model.transmat_ = self._bakis_transmat(n_states)
 
         model.fit(X, lengths)
         return model
@@ -134,12 +136,11 @@ class SankhyaHMM:
     # ── Scoring / Prediction ──────────────────────────────────────────────
 
     def score(self, label: int, mfcc: np.ndarray) -> float:
-        """Per-frame log-likelihood of *mfcc* under the model for *label*."""
+        """Total log-likelihood of *mfcc* under the model for *label*."""
         if label not in self.models:
             return -1e9
         try:
-            ll = self.models[label].score(mfcc)
-            return ll / max(mfcc.shape[0], 1)
+            return self.models[label].score(mfcc)
         except Exception:
             return -1e9
 

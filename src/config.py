@@ -162,38 +162,38 @@ AUG_SPEEDS  = [0.9, 1.0, 1.1]    # Speed/rate factors (1.0 = unchanged speed)
 # State count per token — sized to phonetic complexity
 HMM_STATES = {
     "shunya":  5,
-    "eka":     4,   # bumped from 3 — was confused with tri
-    "dvi":     4,   # bumped from 3 — was confused with tri
-    "tri":     3,
+    "eka":     5,
+    "dvi":     5,
+    "tri":     5,
     "catur":   5,
     "pancha":  5,
-    "shat":    4,   # bumped from 3 — was confused with shata
+    "shat":    5,
     "sapta":   5,
     "ashta":   5,
-    "nava":    4,
-    "dasha":   4,
-    "vimsati": 6,
-    "shata":   4,
+    "nava":    5,
+    "dasha":   5,
+    "vimsati": 5,
+    "shata":   5,
 }
 
 # Per-token GMM mixtures — more for confused tokens
 GMM_MIXTURES = {
     "shunya":  2,
-    "eka":     4,   # confused with tri/pancha — more mixtures
-    "dvi":     4,   # confused with tri — more mixtures
-    "tri":     3,
+    "eka":     2,
+    "dvi":     2,
+    "tri":     2,
     "catur":   2,
-    "pancha":  4,   # confused with eka — more mixtures
-    "shat":    4,   # confused with shata — more mixtures
+    "pancha":  2,
+    "shat":    2,
     "sapta":   2,
     "ashta":   2,
     "nava":    2,
     "dasha":   2,
     "vimsati": 2,
-    "shata":   4,   # confused with shat — more mixtures
+    "shata":   2,
 }
 
-BAUM_WELCH_ITERS   = 150       # EM iterations for training
+BAUM_WELCH_ITERS   = 60       # EM iterations for training
 CONVERGENCE_THRESH = 1e-4     # Log-likelihood convergence threshold
 
 # ═══════════════════════════════════════════════════════════════════════════════
