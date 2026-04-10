@@ -14,6 +14,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Ensure project root is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -22,6 +23,37 @@ from dataset.pipeline import DataPipeline
 from models.hmm_classifier import SankhyaHMM
 from src.decoder import GrammarConstrainedDecoder
 from src.grammar import number_to_tokens
+
+DEFAULT_CHECKPOINT = "checkpoints/hmm_classifier.pkl"
+
+
+def decode_audio(audio_path: str, checkpoint_path: Optional[str] = None,
+                 verbose: bool = False):
+    """Decode a single audio file and return (integer, tokens, debug)."""
+    if checkpoint_path is None:
+        checkpoint_path = DEFAULT_CHECKPOINT
+
+    audio = Path(audio_path)
+    if not audio.exists():
+        raise FileNotFoundError(f"Audio file not found: {audio}")
+
+    ckpt_path = Path(checkpoint_path)
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+
+    hmm = SankhyaHMM(checkpoint_path=str(ckpt_path))
+    decoder = GrammarConstrainedDecoder(hmm)
+
+    pipe = DataPipeline()
+    mfcc = pipe.process_single(str(audio))
+
+    if verbose:
+        print(f"Processing: {audio}")
+        print(f"  Checkpoint: {ckpt_path}")
+        print(f"  MFCC shape: {mfcc.shape}  ({mfcc.shape[0] / 100:.2f}s)")
+
+    result, tokens, debug = decoder.decode(mfcc, verbose=verbose)
+    return result, tokens, debug
 
 
 def main() -> None:
@@ -34,7 +66,7 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="checkpoints/hmm_classifier.pkl",
+        default=None,
         help="Path to the trained SankhyaHMM pickle (default: checkpoints/hmm_classifier.pkl).",
     )
     parser.add_argument(
@@ -42,33 +74,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    audio_path = Path(args.audio)
-    if not audio_path.exists():
-        print(f"Error: audio file not found: {audio_path}")
+    try:
+        result, tokens, debug = decode_audio(
+            args.audio, args.checkpoint, args.verbose
+        )
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
         sys.exit(1)
 
-    ckpt_path = Path(args.checkpoint)
-    if not ckpt_path.exists():
-        print(f"Error: checkpoint not found: {ckpt_path}")
-        print("  Train the HMM first (see notebooks/train_hmm.ipynb) and save to checkpoints/.")
-        sys.exit(1)
-
-    # Load model
-    hmm = SankhyaHMM(checkpoint_path=str(ckpt_path))
-
-    # Build decoder
-    decoder = GrammarConstrainedDecoder(hmm)
-
-    # Process audio → MFCC features
-    pipe = DataPipeline()
-    print(f"Processing: {audio_path}")
-    mfcc = pipe.process_single(str(audio_path))
-    print(f"  MFCC shape: {mfcc.shape}  ({mfcc.shape[0] / 100:.2f}s)")
-
-    # Decode
-    result, tokens, debug = decoder.decode(mfcc, verbose=args.verbose)
-
-    # Output
     print()
     if result >= 0:
         expected_tokens = number_to_tokens(result)
@@ -84,8 +97,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # Example: decode a compound Sanskrit number from a WAV file
-    #   python scripts/demo_decode_sound.py path/to/recording.wav
-    #   python scripts/demo_decode_sound.py path/to/recording.wav --checkpoint checkpoints/hmm_classifier.pkl
-    #   python scripts/demo_decode_sound.py path/to/recording.wav --verbose
+    # Examples:
+    #   python scripts/demo_decode_sound.py data_processed/human/segments/S01/S01_007_01.wav
+    #   python scripts/demo_decode_sound.py recording.wav --checkpoint checkpoints/hmm_classifier.pkl
+    #   python scripts/demo_decode_sound.py recording.wav -v
     main()

@@ -123,4 +123,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Example:
+    #   python scripts/demo_visualize_feat.py
+    #   Outputs: results/viz/<speaker>_<token>_waveform.png, etc.
     main()

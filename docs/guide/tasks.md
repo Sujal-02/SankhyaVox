@@ -31,11 +31,11 @@
 - [x] Build number-to-token and token-to-number mappings
 - [ ] Unit-test grammar coverage (all 100 numbers)
 
-## Phase 5: HMM System 
-- [ ] Implement left-to-right Bakis HMM with GMM emissions
-- [ ] Implement Baum-Welch (Forward-Backward EM) training
-- [ ] Implement grammar-constrained Viterbi decoding
-- [ ] Build training pipeline (flat-start → iterative re-estimation)
+## Phase 5: HMM System
+- [x] Implement left-to-right Bakis GMM-HMM with GMM emissions (`models/hmm_classifier.py`)
+- [x] Implement Baum-Welch (EM) training via hmmlearn
+- [x] Implement grammar-constrained Viterbi decoding (`src/decoder.py`)
+- [x] CLI decoding script (`scripts/demo_decode_sound.py`) with optional `--checkpoint` arg
 - [ ] Silence model (SIL) integration
 
 ## Phase 6: Baseline Models 
@@ -69,4 +69,4 @@
 - [ ] Generate all results tables and figures
 - [ ] Error analysis write-up
 - [ ] Final report compilation
-- [ ] Web-based demo (stretch goal)
+- [x] Flask web app (`app/`) — glassmorphism UI with HMM checkpoint picker, audio upload/record, audio playback, live decoding

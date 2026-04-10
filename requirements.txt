@@ -17,5 +17,8 @@ hmmlearn>=0.3.0
 # Visualisation
 matplotlib>=3.7.0
 
+# Web application
+flask>=3.0.0
+
 # TTS data generation (optional)
 # edge-tts>=6.1.0

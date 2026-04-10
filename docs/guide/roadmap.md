@@ -42,7 +42,7 @@ SankhyaVox/
 ├── data_processed/           # Runtime-generated outputs (git-ignored)
 │   ├── human/                #   raw/ → segments/ → features/
 │   ├── tts/                  #   segments/ → features/
-│   └── augmented/            #   segments/ → features/  (reserved)
+│   └── augmented/            #   segments/ → features/
 ├── dataset/                  # Python module: data pipeline + dataset class
 │   ├── dataset.py            #   SankhyaVoxDataset (pandas-backed, indexed)
 │   ├── pipeline.py           #   DataPipeline (convert, segment, extract, infer)
@@ -51,8 +51,18 @@ SankhyaVox/
 ├── src/                      # Core modules
 │   ├── config.py             #   all paths, constants, hyperparameters
 │   ├── grammar.py            #   BNF grammar, FSA, number↔token maps
+│   ├── decoder.py            #   Grammar-constrained Viterbi decoder (0–99)
 │   └── viz.py                #   feature visualisation (spectrogram, MFCC, waveform)
-├── models/                   # Trained model artifacts (git-ignored)
+├── models/                   # Model definitions
+│   ├── hmm_classifier.py     #   GMM-HMM (Bakis, per-token, Baum-Welch)
+│   ├── gmm_classifier.py     #   GMM baseline (312-dim, max-likelihood)
+│   ├── knn_dtw_classifier.py #   k-NN + DTW (Sakoe-Chiba)
+│   └── svm_classifier.py     #   SVM baseline (352-dim, RBF, grid search)
+├── app/                      # Flask web application
+│   ├── server.py             #   Flask backend (API: /api/decode, /api/checkpoints)
+│   ├── templates/            #   HTML (Jinja2)
+│   └── static/               #   CSS + JS (glassmorphism UI)
+├── checkpoints/              # Saved model weights (git-ignored)
 ├── results/                  # Evaluation outputs (committed for presentations)
 ├── scripts/                  # CLI entry points (future eval scripts)
 ├── docs/
@@ -70,6 +80,7 @@ SankhyaVox/
 | `src/config.py` | Central config — paths, sample rate, MFCC params, HMM states, vocab, numeric ID mappings, TTS config, eval settings |
 | `src/grammar.py` | BNF grammar for 0–99, `number_to_tokens()`, `tokens_to_number()`, `grammar_fsa()` |
 | `src/viz.py` | `plot_waveform()`, `plot_spectrogram()`, `plot_mfcc()`, `plot_comparison()` |
+| `src/decoder.py` | `GrammarConstrainedDecoder` — sliding-window HMM scoring, silence gating, grammar-constrained Viterbi |
 | `dataset/pipeline.py` | `DataPipeline` — convert, segment, generate TTS, extract features, validate, `process_single()` for inference |
 | `dataset/dataset.py` | `SankhyaVoxDataset` — pandas-backed indexed dataset with category views (human/tts/augmented), speaker-split support |
 | `dataset/segmentor.py` | Modular VAD segmentation: `load_audio()`, `apply_highpass()`, `compute_rms_energy()`, `detect_speech_regions()`, `find_boundaries()`, `segment_file()`, `batch_segment()`, `qa_segments()`, `validate_naming()` |
@@ -117,7 +128,7 @@ Speaker instruction sheet, audio format conversion (`DataPipeline.convert()`), V
 - Generate all results tables and figures
 - Error analysis (which phonemes confuse most: dvi/tri, sapta/shat)
 - Final report compilation
-- Web-based demo (stretch goal)
+- Web-based demo ✅ — Flask app (`app/`) with glassmorphism UI: HMM checkpoint picker, audio upload/record, audio playback, live integer recognition
 
 ---
 

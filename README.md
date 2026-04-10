@@ -22,6 +22,7 @@ SankhyaVox/
 │   ├── generator.py      #   TTS generation logic
 │   └── segmentor.py      #   VAD segmentation + QA
 ├── models/               # Model definitions (committed code, not weights)
+│   ├── hmm_classifier.py #   GMM-HMM (Bakis left-to-right, per-token, Baum-Welch)
 │   ├── gmm_classifier.py #   GMM baseline (312-dim features, per-class max-likelihood)
 │   ├── knn_dtw_classifier.py  # k-NN + DTW (Sakoe-Chiba, distance-weighted)
 │   └── svm_classifier.py #   SVM baseline (352-dim features, RBF, grid search)
@@ -36,7 +37,12 @@ SankhyaVox/
 ├── src/                  # Core modules
 │   ├── config.py         #   central paths, constants, hyperparameters
 │   ├── grammar.py        #   BNF grammar, FSA, number-token maps
+│   ├── decoder.py        #   Grammar-constrained Viterbi decoder (0–99)
 │   └── viz.py            #   feature visualisation (spectrogram, MFCC, waveform)
+├── app/                  # Flask web application
+│   ├── server.py         #   Flask backend (API: /api/decode, /api/checkpoints)
+│   ├── templates/        #   HTML (Jinja2 template)
+│   └── static/           #   CSS + JS (glassmorphism UI)
 ├── docs/
 │   ├── guide/            #   roadmap, task checklist, speaker recording guide
 │   └── report/           #   technical report (LaTeX + PDF)
@@ -190,8 +196,59 @@ For live testing where a user says a number once (no segmentation needed):
 ```python
 features = pipe.process_single("path/to/test_audio.m4a")
 # features is a numpy array of shape (n_frames, 39)
-# ready to feed directly into the HMM decoder
+# ready to feed directly into the decoder
 ```
+
+## Grammar-Constrained Decoding
+
+The grammar-constrained Viterbi decoder (`src/decoder.py`) recognises compound Sanskrit numbers (0–99) from audio using the trained HMM classifier.
+
+### CLI usage
+
+```bash
+# Decode with default HMM checkpoint
+python scripts/demo_decode_sound.py path/to/recording.wav
+
+# Decode with a specific HMM checkpoint
+python scripts/demo_decode_sound.py path/to/recording.wav --checkpoint checkpoints/hmm_classifier.pkl
+
+# Verbose mode — prints MFCC shape, Viterbi path, grammar parse
+python scripts/demo_decode_sound.py path/to/recording.wav -v
+```
+
+### Python API
+
+```python
+from scripts.demo_decode_sound import decode_audio
+
+result, tokens, debug = decode_audio(
+    "path/to/recording.wav",
+    checkpoint_path=None,       # uses default, or pass explicit path
+    verbose=True,
+)
+print(result)    # e.g. 57
+print(tokens)    # e.g. ['pancha', 'dasha', 'sapta']
+```
+
+## Web Application
+
+A Flask web UI (`app/`) provides the same decoding functionality through a browser interface with a glassmorphism design.
+
+### Setup & Launch
+
+```bash
+pip install flask
+python app/server.py
+```
+
+Open `http://127.0.0.1:5000` in your browser.
+
+### Features
+
+- **Checkpoint picker** — select from available HMM checkpoints in `checkpoints/`
+- **Audio input** — upload a file or record directly from the microphone
+- **Audio playback** — replay the source audio after decoding
+- **Live decoding** — displays the recognised integer (0–99) with token breakdown and confidence score
 
 ## Data Change Workflow (DVC + Google Drive)
 
@@ -241,6 +298,7 @@ dvc status -c
 | **Task Checklist** | `docs/guide/tasks.md` | Phase-by-phase checklist with completion status |
 | **Speaker Recording Guide** | `docs/guide/speaker_guide/` | LaTeX instruction sheet + PDF for distributing to speakers |
 | **Technical Report** | `docs/report/SankhyaVox_Technical_Report.tex` | Full system specification — grammar, HMM design, evaluation plan, baselines, bibliography |
+| **Baseline Model Training** | `notebooks/train_*.ipynb` | GMM, HMM, k-NN+DTW, SVM train/eval |
 
 ## Baseline Model Training
 
@@ -258,10 +316,13 @@ The workflow for each:
 To train, open the notebook, paste the model class from `models/`, and run all cells.
 Change `TEST_SPEAKER` in the config cell to hold out a different speaker.
 
+| **Baseline Model Training** | `notebooks/train_*.ipynb` | GMM, HMM, k-NN+DTW, SVM train/eval |
+
 ### Model Feature Transforms
 
 | Model | Transform Dim | Key Features |
 |---|---|---|
+| HMM | 39 × T | Full MFCC sequences, per-frame scoring via GMM-HMM per token |
 | GMM | 312 | mean, std, min, max, median, q25, q75, delta-mean per MFCC coeff |
 | k-NN+DTW | 13 × T | Static MFCCs only (strips Δ/ΔΔ), per-utterance z-normalisation |
 | SVM | 352 | mean, std, min, max, median, q10, q90, IQR, delta-abs-mean, log-duration |
