@@ -193,7 +193,7 @@ GMM_MIXTURES = {
     "shata":   3,
 }
 
-BAUM_WELCH_ITERS   = 100       # EM iterations for training
+BAUM_WELCH_ITERS   = 150       # EM iterations for training
 CONVERGENCE_THRESH = 1e-4     # Log-likelihood convergence threshold
 
 # ═══════════════════════════════════════════════════════════════════════════════
