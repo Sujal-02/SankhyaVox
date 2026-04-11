@@ -101,7 +101,7 @@ class SankhyaHMM:
             covariance_type="diag",
             verbose=False,
             init_params="mcw",   # skip random init of startprob/transmat
-            params="mcw",        #  was "stmcw": freeze s and t to preserve Bakis
+            params="tmcw",        #  was "stmcw": freeze s and t to preserve Bakis
             covars_prior=1e-2,   # variance floor prior
             covars_weight=1.0,   # ADD: prior strength
         )
