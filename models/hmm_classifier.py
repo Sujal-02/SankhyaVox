@@ -63,12 +63,17 @@ class SankhyaHMM:
 
     @staticmethod
     def _bakis_transmat(n_states: int) -> np.ndarray:
-        """Left-to-right transition matrix: stay or advance, no skip."""
         A = np.zeros((n_states, n_states))
-        for i in range(n_states - 1):
-            A[i, i] = 0.6
-            A[i, i + 1] = 0.4
-        A[-1, -1] = 1.0
+        for i in range(n_states):
+            if i < n_states - 2:
+                A[i, i]     = 0.5   # stay
+                A[i, i + 1] = 0.35  # advance
+                A[i, i + 2] = 0.15  # skip
+            elif i < n_states - 1:
+                A[i, i]     = 0.6
+                A[i, i + 1] = 0.4
+            else:
+                A[i, i] = 1.0
         return A
 
     @staticmethod
