@@ -161,39 +161,39 @@ AUG_SPEEDS  = [0.9, 1.0, 1.1]    # Speed/rate factors (1.0 = unchanged speed)
 
 # State count per token — sized to phonetic complexity
 HMM_STATES = {
-    "shunya":  5,
-    "eka":     5,
-    "dvi":     5,
-    "tri":     5,
-    "catur":   5,
-    "pancha":  5,
-    "shat":    5,
-    "sapta":   5,
-    "ashta":   5,
-    "nava":    5,
-    "dasha":   5,
-    "vimsati": 5,
-    "shata":   5,
+    "shunya":  15,
+    "eka":     9,
+    "dvi":     9,
+    "tri":     9,
+    "catur":   15,
+    "pancha":  15,
+    "shat":    9,
+    "sapta":   15,
+    "ashta":   12,
+    "nava":    12,
+    "dasha":   12,
+    "vimsati": 21,
+    "shata":   12,
 }
 
 # Per-token GMM mixtures — more for confused tokens
 GMM_MIXTURES = {
-    "shunya":  2,
-    "eka":     2,
-    "dvi":     2,
-    "tri":     2,
-    "catur":   2,
-    "pancha":  2,
-    "shat":    2,
-    "sapta":   2,
-    "ashta":   2,
-    "nava":    2,
-    "dasha":   2,
-    "vimsati": 2,
-    "shata":   2,
+    "shunya":  3,
+    "eka":     3,
+    "dvi":     3,
+    "tri":     3,
+    "catur":   3,
+    "pancha":  3,
+    "shat":    3,
+    "sapta":   3,
+    "ashta":   3,
+    "nava":    3,
+    "dasha":   3,
+    "vimsati": 3,
+    "shata":   3,
 }
 
-BAUM_WELCH_ITERS   = 60       # EM iterations for training
+BAUM_WELCH_ITERS   = 100       # EM iterations for training
 CONVERGENCE_THRESH = 1e-4     # Log-likelihood convergence threshold
 
 # ═══════════════════════════════════════════════════════════════════════════════

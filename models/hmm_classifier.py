@@ -6,6 +6,7 @@ sequences.  Classification by maximum per-frame log-likelihood.
 """
 
 import pickle
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -95,7 +96,9 @@ class SankhyaHMM:
             covariance_type="diag",
             verbose=False,
             init_params="mcw",   # skip random init of startprob/transmat
-            params="stmcw",      # but still update them during EM
+            params="mcw",        #  was "stmcw": freeze s and t to preserve Bakis
+            covars_prior=1e-2,   # variance floor prior
+            covars_weight=1.0,   # ADD: prior strength
         )
         model.startprob_ = self._bakis_startprob(n_states)
         model.transmat_ = self._bakis_transmat(n_states)
@@ -122,13 +125,17 @@ class SankhyaHMM:
         for label, seqs in sorted(groups.items()):
             token = VALUE_TO_TOKEN.get(label, str(label))
             self._label_to_token[label] = token
+            t0 = time.perf_counter()
             self.models[label] = self._fit_one(label, seqs)
+            elapsed = time.perf_counter() - t0
             n_states = self.states_map.get(token, 5)
             n_mix = self.mix_map.get(token, _DEFAULT_MIX)
+            model = self.models[label]
+            status = f"converged ({model.monitor_.iter} iters)" if model.monitor_.converged else f"no convergence ({model.monitor_.iter} iters)"
             print(
                 f"  {token:>8s} (label={label:>3d}): "
                 f"{len(seqs):4d} seqs, {n_states} states, "
-                f"{n_mix} mix"
+                f"{n_mix} mix, {elapsed:.1f}s, {status}"
             )
 
         return self
@@ -136,12 +143,14 @@ class SankhyaHMM:
     # ── Scoring / Prediction ──────────────────────────────────────────────
 
     def score(self, label: int, mfcc: np.ndarray) -> float:
-        """Total log-likelihood of *mfcc* under the model for *label*."""
+        """Per-frame log-likelihood of *mfcc* under the model for *label*."""
         if label not in self.models:
             return -1e9
         try:
-            return self.models[label].score(mfcc)
-        except Exception:
+            return self.models[label].score(mfcc) / mfcc.shape[0]
+        except Exception as e:
+            # This reveals which models are broken
+            print(f"  ⚠ score failed for label={label}: {e}")
             return -1e9
 
     def predict(self, X: list[np.ndarray]) -> np.ndarray:
