@@ -161,19 +161,19 @@ AUG_SPEEDS  = [0.9, 1.0, 1.1]    # Speed/rate factors (1.0 = unchanged speed)
 
 # State count per token — sized to phonetic complexity
 HMM_STATES = {
-    "shunya":  5,
-    "eka":     4,
-    "dvi":     3,
-    "tri":     3,
-    "catur":   4,
-    "pancha":  4,
-    "shat":    3,
-    "sapta":   4,
-    "ashta":   4,
-    "nava":    4,
-    "dasha":   4,
-    "vimsati": 5,
-    "shata":   4,
+    "shunya":  15,
+    "eka":     9,
+    "dvi":     9,
+    "tri":     9,
+    "catur":   15,
+    "pancha":  15,
+    "shat":    9,
+    "sapta":   15,
+    "ashta":   12,
+    "nava":    12,
+    "dasha":   12,
+    "vimsati": 21,
+    "shata":   12,
 }
 
 # Per-token GMM mixtures — more for confused tokens
