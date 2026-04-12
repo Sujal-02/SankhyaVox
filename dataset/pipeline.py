@@ -308,6 +308,20 @@ class DataPipeline:
         return audio.astype(np.float32)
 
     @staticmethod
+    def _trim_silence(
+        audio: np.ndarray,
+        top_db: float = 25.0,
+        frame_length: int = FRAME_LENGTH,
+        hop_length: int = FRAME_SHIFT,
+    ) -> np.ndarray:
+        """Remove leading/trailing silence so CMVN and HMM see speech only."""
+        trimmed, _ = librosa.effects.trim(
+            audio, top_db=top_db,
+            frame_length=frame_length, hop_length=hop_length,
+        )
+        return trimmed
+
+    @staticmethod
     def _extract_mfcc(audio: np.ndarray, sr: int = SAMPLE_RATE) -> np.ndarray:
         """Extract MFCC features (default 39-dim with deltas + CMVN)."""
         mfcc = librosa.feature.mfcc(
@@ -543,6 +557,7 @@ class DataPipeline:
                 audio = librosa.resample(audio, orig_sr=sr, target_sr=SAMPLE_RATE)
 
             audio = self._preprocess_audio(audio)
+            audio = self._trim_silence(audio)
             features = self._extract_mfcc(audio)
 
             if output_npy:
