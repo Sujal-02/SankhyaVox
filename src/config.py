@@ -178,19 +178,19 @@ HMM_STATES = {
 
 # Per-token GMM mixtures — more for confused tokens
 GMM_MIXTURES = {
-    "shunya":  8,
-    "eka":     8,
-    "dvi":     8,
-    "tri":     8,
-    "catur":   8,
-    "pancha":  8,
-    "shat":    8,
-    "sapta":   8,
-    "ashta":   8,
-    "nava":    8,
-    "dasha":   8,
-    "vimsati": 8,
-    "shata":   8,
+    "shunya":  12,
+    "eka":     12,
+    "dvi":     12,
+    "tri":     12,
+    "catur":   12,
+    "pancha":  12,
+    "shat":    12,
+    "sapta":   12,
+    "ashta":   12,
+    "nava":    12,
+    "dasha":   12,
+    "vimsati": 12,
+    "shata":   12,
 }
 
 BAUM_WELCH_ITERS   = 150       # EM iterations for training
