@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SankhyaVox — Sanskrit Digit Recognition</title>
-    <meta name="description" content="SankhyaVox: Minimal-Vocabulary Sanskrit Spoken Digit Recognition System using HMM, SVM, and DNN models.">
+    <meta name="description" content="SankhyaVox: Grammar-Constrained HMM decoder for Sanskrit spoken digit recognition (0-99).">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Animated background particles -->
     <div class="bg-grid"></div>
     <div class="glow glow-1"></div>
     <div class="glow glow-2"></div>
@@ -19,7 +18,7 @@
         <header>
             <div class="badge">🕉️ Sanskrit Speech AI</div>
             <h1>Sankhya<span class="accent">Vox</span></h1>
-            <p class="subtitle">Grammar-Constrained HMM · SVM · DNN — Recognising 0-99 from 13 words</p>
+            <p class="subtitle">Grammar-Constrained HMM · 13 tokens → 0–99</p>
         </header>
 
         <!-- Recording Card -->
@@ -56,60 +55,58 @@
             </button>
         </div>
 
-        <!-- Results -->
-        <div id="resultCard" class="results-grid hidden">
-            <div class="model-card hmm-card">
-                <div class="model-header">
-                    <div class="model-icon">🏛️</div>
-                    <div class="model-label">HMM</div>
-                    <div class="model-tag">Sequence</div>
+        <!-- Result Card -->
+        <div id="resultCard" class="card result-card hidden">
+            <div class="result-header">
+                <div class="result-icon">🏛️</div>
+                <div>
+                    <div class="result-label">Grammar-Constrained Decoder</div>
+                    <div class="result-model" id="modelName">—</div>
                 </div>
-                <div class="model-result">
-                    <div class="number-display" id="predNumberHMM">—</div>
-                    <div class="token-display" id="predTokensHMM">waiting</div>
-                </div>
-                <div class="model-footer">
-                    <div class="confidence-bar"><div class="confidence-fill" id="confBarHMM"></div></div>
-                    <span class="confidence-text" id="predConfidenceHMM">—</span>
-                </div>
+                <div class="confidence-badge" id="confidenceBadge"></div>
             </div>
 
-            <div class="model-card svm-card">
-                <div class="model-header">
-                    <div class="model-icon">⚡</div>
-                    <div class="model-label">SVM</div>
-                    <div class="model-tag">Kernel</div>
-                </div>
-                <div class="model-result">
-                    <div class="number-display" id="predNumberSVM">—</div>
-                    <div class="token-display" id="predTokensSVM">waiting</div>
-                </div>
-                <div class="model-footer">
-                    <div class="confidence-bar"><div class="confidence-fill" id="confBarSVM"></div></div>
-                    <span class="confidence-text" id="predConfidenceSVM">—</span>
-                </div>
+            <div class="result-main">
+                <div class="big-number" id="resultNumber">—</div>
+                <div class="result-status" id="resultStatus">waiting</div>
             </div>
 
-            <div class="model-card dnn-card">
-                <div class="model-header">
-                    <div class="model-icon">🧠</div>
-                    <div class="model-label">DNN</div>
-                    <div class="model-tag">Neural</div>
+            <!-- Devanagari display -->
+            <div class="deva-section" id="devaSection">
+                <span class="deva-label">Devanagari</span>
+                <div class="deva-text" id="devaText"></div>
+            </div>
+
+            <div class="result-tokens">
+                <span class="tokens-label">Token Sequence:</span>
+                <div class="tokens-list" id="resultTokens"></div>
+            </div>
+
+            <div class="result-meta">
+                <div class="meta-item">
+                    <span class="meta-key">Log-Score</span>
+                    <span class="meta-val" id="resultScore">—</span>
                 </div>
-                <div class="model-result">
-                    <div class="number-display" id="predNumberDNN">—</div>
-                    <div class="token-display" id="predTokensDNN">waiting</div>
+                <div class="meta-item">
+                    <span class="meta-key">Confidence</span>
+                    <span class="meta-val" id="resultConf">—</span>
                 </div>
-                <div class="model-footer">
-                    <div class="confidence-bar"><div class="confidence-fill" id="confBarDNN"></div></div>
-                    <span class="confidence-text" id="predConfidenceDNN">—</span>
+                <div class="meta-item">
+                    <span class="meta-key">Model</span>
+                    <span class="meta-val" id="resultModel">—</span>
                 </div>
             </div>
         </div>
 
+        <!-- Error Card -->
+        <div id="errorCard" class="card error-card hidden">
+            <div class="error-icon">⚠️</div>
+            <div class="error-text" id="errorText"></div>
+        </div>
+
         <footer>
-            <p>Built with HMM + Grammar-Constrained Viterbi Decoding</p>
-            <p class="footnote">13 Sanskrit tokens → 100 numbers (0–99)</p>
+            <p>Built with HMM + Grammar-Constrained Decoding</p>
+            <p class="footnote" id="footerAccuracy">13 Sanskrit tokens → 100 numbers (0–99)</p>
         </footer>
     </div>
 
@@ -120,13 +117,22 @@
         let isRecording = false;
 
         const $ = id => document.getElementById(id);
-        const recordBtn = $('recordButton');
-        const indicator = $('recordingIndicator');
-        const playback = $('audioPlayback');
-        const fileInput = $('fileUpload');
-        const fileName = $('fileName');
-        const predictBtn = $('predictButton');
-        const resultCard = $('resultCard');
+        const recordBtn   = $('recordButton');
+        const indicator   = $('recordingIndicator');
+        const playback    = $('audioPlayback');
+        const fileInput   = $('fileUpload');
+        const fileName    = $('fileName');
+        const predictBtn  = $('predictButton');
+        const resultCard  = $('resultCard');
+        const errorCard   = $('errorCard');
+
+        // Load model accuracy on page open
+        fetch('/info').then(r => r.json()).then(data => {
+            if (data.isolated_accuracy) {
+                $('footerAccuracy').textContent =
+                    `Model A · Isolated ${data.isolated_accuracy}% · Compound ${data.compound_accuracy}%`;
+            }
+        }).catch(() => {});
 
         recordBtn.addEventListener('click', toggleRecording);
 
@@ -139,7 +145,7 @@
                     audioChunks = [];
                     mediaRecorder.ondataavailable = ev => audioChunks.push(ev.data);
                     mediaRecorder.onstop = () => {
-                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         playback.src = URL.createObjectURL(audioBlob);
                         playback.classList.remove('hidden');
                         predictBtn.disabled = false;
@@ -154,12 +160,16 @@
                     recordBtn.querySelector('.text').innerText = "Stop";
                     playback.classList.add('hidden');
                     resultCard.classList.add('hidden');
+                    errorCard.classList.add('hidden');
+                    audioBlob = null;
+                    predictBtn.disabled = true;
                 } catch (err) {
                     alert("🎤 Microphone access required.");
                 }
             } else {
                 if (mediaRecorder && mediaRecorder.state !== "inactive") {
                     mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(t => t.stop());
                     isRecording = false;
                 }
             }
@@ -177,55 +187,70 @@
 
         predictBtn.addEventListener('click', async () => {
             if (!audioBlob) return;
-            
+
             predictBtn.querySelector('.btn-text').classList.add('hidden');
             predictBtn.querySelector('.btn-loader').classList.remove('hidden');
             predictBtn.disabled = true;
             resultCard.classList.add('hidden');
+            errorCard.classList.add('hidden');
 
+            // ── KEY FIX: use 'file' to match Flask backend ──
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'test_audio.wav');
+            formData.append('file', audioBlob, 'recording.wav');
 
             try {
                 const response = await fetch('/predict', { method: 'POST', body: formData });
-                if (!response.ok) {
-                    const text = await response.text();
-                    try { alert("Error: " + JSON.parse(text).error); }
-                    catch(e) { alert("Server error! Check terminal."); }
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    $('errorText').innerText = data.error || 'Server error';
+                    errorCard.classList.remove('hidden');
                     return;
                 }
-                const data = await response.json();
-                if (data.error) { alert(data.error); return; }
 
-                function updateCard(prefix, d) {
-                    if (!d) return;
-                    $(prefix + 'Number' + prefix.slice(-3).toUpperCase()).innerText = 
-                        d.number !== -1 ? d.number : "?";
-                }
+                const num = data.number;
+                const ok  = num >= 0;
 
-                if (data.hmm) {
-                    $('predNumberHMM').innerText = data.hmm.number !== -1 ? data.hmm.number : "?";
-                    $('predTokensHMM').innerText = data.hmm.tokens.join(' · ');
-                    $('predConfidenceHMM').innerText = `Score: ${data.hmm.score.toFixed(1)}`;
-                    // HMM score is log-likelihood, normalize for display
-                    let hmmPct = Math.min(100, Math.max(5, (data.hmm.score + 500) / 5));
-                    $('confBarHMM').style.width = hmmPct + '%';
-                }
-                if (data.svm) {
-                    $('predNumberSVM').innerText = data.svm.number !== -1 ? data.svm.number : "?";
-                    $('predTokensSVM').innerText = data.svm.tokens.join(' · ');
-                    $('predConfidenceSVM').innerText = `${data.svm.score.toFixed(1)}%`;
-                    $('confBarSVM').style.width = data.svm.score + '%';
-                }
-                if (data.dnn) {
-                    $('predNumberDNN').innerText = data.dnn.number !== -1 ? data.dnn.number : "?";
-                    $('predTokensDNN').innerText = data.dnn.tokens.join(' · ');
-                    $('predConfidenceDNN').innerText = `${data.dnn.score.toFixed(1)}%`;
-                    $('confBarDNN').style.width = data.dnn.score + '%';
-                }
+                // Number display
+                $('resultNumber').innerText = ok ? num : "?";
+                $('resultNumber').className = 'big-number' + (ok ? ' success' : ' fail');
+                $('resultStatus').innerText  = ok ? 'Recognized' : 'Not recognized';
+                $('resultStatus').className  = 'result-status' + (ok ? ' status-ok' : ' status-fail');
+
+                // Model name
+                $('modelName').innerText = data.model || '—';
+                $('resultModel').innerText = data.model || '—';
+
+                // Devanagari
+                const deva = data.devanagari || '';
+                $('devaText').innerText = deva || '—';
+                $('devaSection').style.display = deva ? 'block' : 'none';
+
+                // Confidence badge
+                const conf = data.confidence || '';
+                const badge = $('confidenceBadge');
+                badge.textContent = conf;
+                badge.className = 'confidence-badge conf-' + conf.toLowerCase();
+
+                // Tokens
+                const tokenList = $('resultTokens');
+                tokenList.innerHTML = '';
+                (data.tokens || []).forEach(tok => {
+                    const span = document.createElement('span');
+                    span.className = 'token-tag';
+                    span.textContent = tok;
+                    tokenList.appendChild(span);
+                });
+
+                // Meta
+                $('resultScore').innerText = Number.isFinite(data.score) ? data.score.toFixed(1) : '—';
+                $('resultConf').innerText  = conf || '—';
+
                 resultCard.classList.remove('hidden');
+
             } catch (err) {
-                alert("Network error: Is Flask running?");
+                $('errorText').innerText = 'Network error: Is the Flask server running?';
+                errorCard.classList.remove('hidden');
             } finally {
                 predictBtn.querySelector('.btn-text').classList.remove('hidden');
                 predictBtn.querySelector('.btn-loader').classList.add('hidden');

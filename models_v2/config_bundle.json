@@ -1,0 +1,600 @@
+{
+  "vocab": [
+    "shunya",
+    "eka",
+    "dvi",
+    "tri",
+    "catur",
+    "pancha",
+    "shat",
+    "sapta",
+    "ashta",
+    "nava",
+    "dasha",
+    "vimsati",
+    "shata"
+  ],
+  "devanagari": {
+    "shunya": "शून्य",
+    "eka": "एक",
+    "dvi": "द्वि",
+    "tri": "त्रि",
+    "catur": "चतुर",
+    "pancha": "पञ्च",
+    "shat": "षट",
+    "sapta": "सप्त",
+    "ashta": "अष्ट",
+    "nava": "नव",
+    "dasha": "दश",
+    "vimsati": "विंशति",
+    "shata": "शत"
+  },
+  "grammar": {
+    "0": [
+      "shunya"
+    ],
+    "1": [
+      "eka"
+    ],
+    "2": [
+      "dvi"
+    ],
+    "3": [
+      "tri"
+    ],
+    "4": [
+      "catur"
+    ],
+    "5": [
+      "pancha"
+    ],
+    "6": [
+      "shat"
+    ],
+    "7": [
+      "sapta"
+    ],
+    "8": [
+      "ashta"
+    ],
+    "9": [
+      "nava"
+    ],
+    "10": [
+      "dasha"
+    ],
+    "11": [
+      "dasha",
+      "eka"
+    ],
+    "12": [
+      "dasha",
+      "dvi"
+    ],
+    "13": [
+      "dasha",
+      "tri"
+    ],
+    "14": [
+      "dasha",
+      "catur"
+    ],
+    "15": [
+      "dasha",
+      "pancha"
+    ],
+    "16": [
+      "dasha",
+      "shat"
+    ],
+    "17": [
+      "dasha",
+      "sapta"
+    ],
+    "18": [
+      "dasha",
+      "ashta"
+    ],
+    "19": [
+      "dasha",
+      "nava"
+    ],
+    "20": [
+      "vimsati"
+    ],
+    "21": [
+      "vimsati",
+      "eka"
+    ],
+    "22": [
+      "vimsati",
+      "dvi"
+    ],
+    "23": [
+      "vimsati",
+      "tri"
+    ],
+    "24": [
+      "vimsati",
+      "catur"
+    ],
+    "25": [
+      "vimsati",
+      "pancha"
+    ],
+    "26": [
+      "vimsati",
+      "shat"
+    ],
+    "27": [
+      "vimsati",
+      "sapta"
+    ],
+    "28": [
+      "vimsati",
+      "ashta"
+    ],
+    "29": [
+      "vimsati",
+      "nava"
+    ],
+    "30": [
+      "tri",
+      "dasha"
+    ],
+    "31": [
+      "tri",
+      "dasha",
+      "eka"
+    ],
+    "32": [
+      "tri",
+      "dasha",
+      "dvi"
+    ],
+    "33": [
+      "tri",
+      "dasha",
+      "tri"
+    ],
+    "34": [
+      "tri",
+      "dasha",
+      "catur"
+    ],
+    "35": [
+      "tri",
+      "dasha",
+      "pancha"
+    ],
+    "36": [
+      "tri",
+      "dasha",
+      "shat"
+    ],
+    "37": [
+      "tri",
+      "dasha",
+      "sapta"
+    ],
+    "38": [
+      "tri",
+      "dasha",
+      "ashta"
+    ],
+    "39": [
+      "tri",
+      "dasha",
+      "nava"
+    ],
+    "40": [
+      "catur",
+      "dasha"
+    ],
+    "41": [
+      "catur",
+      "dasha",
+      "eka"
+    ],
+    "42": [
+      "catur",
+      "dasha",
+      "dvi"
+    ],
+    "43": [
+      "catur",
+      "dasha",
+      "tri"
+    ],
+    "44": [
+      "catur",
+      "dasha",
+      "catur"
+    ],
+    "45": [
+      "catur",
+      "dasha",
+      "pancha"
+    ],
+    "46": [
+      "catur",
+      "dasha",
+      "shat"
+    ],
+    "47": [
+      "catur",
+      "dasha",
+      "sapta"
+    ],
+    "48": [
+      "catur",
+      "dasha",
+      "ashta"
+    ],
+    "49": [
+      "catur",
+      "dasha",
+      "nava"
+    ],
+    "50": [
+      "pancha",
+      "dasha"
+    ],
+    "51": [
+      "pancha",
+      "dasha",
+      "eka"
+    ],
+    "52": [
+      "pancha",
+      "dasha",
+      "dvi"
+    ],
+    "53": [
+      "pancha",
+      "dasha",
+      "tri"
+    ],
+    "54": [
+      "pancha",
+      "dasha",
+      "catur"
+    ],
+    "55": [
+      "pancha",
+      "dasha",
+      "pancha"
+    ],
+    "56": [
+      "pancha",
+      "dasha",
+      "shat"
+    ],
+    "57": [
+      "pancha",
+      "dasha",
+      "sapta"
+    ],
+    "58": [
+      "pancha",
+      "dasha",
+      "ashta"
+    ],
+    "59": [
+      "pancha",
+      "dasha",
+      "nava"
+    ],
+    "60": [
+      "shat",
+      "dasha"
+    ],
+    "61": [
+      "shat",
+      "dasha",
+      "eka"
+    ],
+    "62": [
+      "shat",
+      "dasha",
+      "dvi"
+    ],
+    "63": [
+      "shat",
+      "dasha",
+      "tri"
+    ],
+    "64": [
+      "shat",
+      "dasha",
+      "catur"
+    ],
+    "65": [
+      "shat",
+      "dasha",
+      "pancha"
+    ],
+    "66": [
+      "shat",
+      "dasha",
+      "shat"
+    ],
+    "67": [
+      "shat",
+      "dasha",
+      "sapta"
+    ],
+    "68": [
+      "shat",
+      "dasha",
+      "ashta"
+    ],
+    "69": [
+      "shat",
+      "dasha",
+      "nava"
+    ],
+    "70": [
+      "sapta",
+      "dasha"
+    ],
+    "71": [
+      "sapta",
+      "dasha",
+      "eka"
+    ],
+    "72": [
+      "sapta",
+      "dasha",
+      "dvi"
+    ],
+    "73": [
+      "sapta",
+      "dasha",
+      "tri"
+    ],
+    "74": [
+      "sapta",
+      "dasha",
+      "catur"
+    ],
+    "75": [
+      "sapta",
+      "dasha",
+      "pancha"
+    ],
+    "76": [
+      "sapta",
+      "dasha",
+      "shat"
+    ],
+    "77": [
+      "sapta",
+      "dasha",
+      "sapta"
+    ],
+    "78": [
+      "sapta",
+      "dasha",
+      "ashta"
+    ],
+    "79": [
+      "sapta",
+      "dasha",
+      "nava"
+    ],
+    "80": [
+      "ashta",
+      "dasha"
+    ],
+    "81": [
+      "ashta",
+      "dasha",
+      "eka"
+    ],
+    "82": [
+      "ashta",
+      "dasha",
+      "dvi"
+    ],
+    "83": [
+      "ashta",
+      "dasha",
+      "tri"
+    ],
+    "84": [
+      "ashta",
+      "dasha",
+      "catur"
+    ],
+    "85": [
+      "ashta",
+      "dasha",
+      "pancha"
+    ],
+    "86": [
+      "ashta",
+      "dasha",
+      "shat"
+    ],
+    "87": [
+      "ashta",
+      "dasha",
+      "sapta"
+    ],
+    "88": [
+      "ashta",
+      "dasha",
+      "ashta"
+    ],
+    "89": [
+      "ashta",
+      "dasha",
+      "nava"
+    ],
+    "90": [
+      "nava",
+      "dasha"
+    ],
+    "91": [
+      "nava",
+      "dasha",
+      "eka"
+    ],
+    "92": [
+      "nava",
+      "dasha",
+      "dvi"
+    ],
+    "93": [
+      "nava",
+      "dasha",
+      "tri"
+    ],
+    "94": [
+      "nava",
+      "dasha",
+      "catur"
+    ],
+    "95": [
+      "nava",
+      "dasha",
+      "pancha"
+    ],
+    "96": [
+      "nava",
+      "dasha",
+      "shat"
+    ],
+    "97": [
+      "nava",
+      "dasha",
+      "sapta"
+    ],
+    "98": [
+      "nava",
+      "dasha",
+      "ashta"
+    ],
+    "99": [
+      "nava",
+      "dasha",
+      "nava"
+    ]
+  },
+  "hmm_states": {
+    "shunya": 5,
+    "eka": 3,
+    "dvi": 3,
+    "tri": 3,
+    "catur": 5,
+    "pancha": 5,
+    "shat": 3,
+    "sapta": 5,
+    "ashta": 5,
+    "nava": 4,
+    "dasha": 4,
+    "vimsati": 6,
+    "shata": 4
+  },
+  "n_mix": 2,
+  "sample_rate": 16000,
+  "n_features": 39,
+  "window_frames": 25,
+  "hop_frames": 5,
+  "train_log": {
+    "shunya": {
+      "n_samples": 945,
+      "total_frames": 72431,
+      "avg_train_loglik": -3314.319613766027,
+      "train_sec": 466.82
+    },
+    "eka": {
+      "n_samples": 945,
+      "total_frames": 65092,
+      "avg_train_loglik": -3258.992209705894,
+      "train_sec": 195.21
+    },
+    "dvi": {
+      "n_samples": 945,
+      "total_frames": 60603,
+      "avg_train_loglik": -3305.902733397782,
+      "train_sec": 236.78
+    },
+    "tri": {
+      "n_samples": 945,
+      "total_frames": 59136,
+      "avg_train_loglik": -3402.873328438896,
+      "train_sec": 226.56
+    },
+    "catur": {
+      "n_samples": 945,
+      "total_frames": 75299,
+      "avg_train_loglik": -4081.051176588547,
+      "train_sec": 463.57
+    },
+    "pancha": {
+      "n_samples": 945,
+      "total_frames": 72384,
+      "avg_train_loglik": -3746.5160587288256,
+      "train_sec": 256.65
+    },
+    "shat": {
+      "n_samples": 945,
+      "total_frames": 54272,
+      "avg_train_loglik": -2495.269811030217,
+      "train_sec": 87.24
+    },
+    "sapta": {
+      "n_samples": 945,
+      "total_frames": 82087,
+      "avg_train_loglik": -4575.138969951755,
+      "train_sec": 185.35
+    },
+    "ashta": {
+      "n_samples": 945,
+      "total_frames": 72026,
+      "avg_train_loglik": -3732.7019381297446,
+      "train_sec": 169.39
+    },
+    "nava": {
+      "n_samples": 945,
+      "total_frames": 71825,
+      "avg_train_loglik": -3818.588869053772,
+      "train_sec": 97.74
+    },
+    "dasha": {
+      "n_samples": 945,
+      "total_frames": 66090,
+      "avg_train_loglik": -2896.7489374197826,
+      "train_sec": 118.53
+    },
+    "vimsati": {
+      "n_samples": 945,
+      "total_frames": 72697,
+      "avg_train_loglik": -4034.2316970757624,
+      "train_sec": 194.19
+    },
+    "shata": {
+      "n_samples": 945,
+      "total_frames": 64201,
+      "avg_train_loglik": -14610.82426558414,
+      "train_sec": 94.17
+    }
+  },
+  "isolated_acc": {
+    "shunya": 97.35449735449735,
+    "eka": 76.19047619047619,
+    "dvi": 66.66666666666666,
+    "tri": 95.23809523809523,
+    "catur": 99.47089947089947,
+    "pancha": 70.37037037037037,
+    "shat": 69.84126984126983,
+    "sapta": 96.29629629629629,
+    "ashta": 99.47089947089947,
+    "nava": 99.47089947089947,
+    "dasha": 93.65079365079364,
+    "vimsati": 100.0,
+    "shata": 49.2063492063492
+  }
+}

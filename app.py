@@ -1,137 +1,124 @@
+#!/usr/bin/env python3
+"""
+SankhyaVox Flask Server
+app.py
+
+Usage:
+    python app.py
+    Open: http://localhost:5000
+
+Endpoints:
+    GET  /            web UI
+    POST /predict     predict digits from uploaded audio
+    GET  /health      liveness check
+    GET  /info        model metadata and per-token accuracy
+    GET  /debug       verbose decode trace on uploaded audio (dev only)
+
+Audio formats accepted: wav, m4a, mp3, webm, ogg (anything ffmpeg handles)
+"""
 import os
-import sys
-import numpy as np
-import soundfile as sf
-import librosa
-import joblib
+import json
+import tempfile
+
 from flask import Flask, request, jsonify, render_template
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
-from src.config import VOCAB, HMM_STATES, MODEL_DIR, SAMPLE_RATE, IDX_TO_TOKEN
-from src.hmm import SankhyaHMMBase
-from src.decoder import ConstrainedViterbiDecoder
-from src.grammar import all_valid_sequences, number_to_tokens, _TOKEN_TO_VALUE
-from scripts.extract_features import preprocess_audio, extract_mfcc
+from src.inference import SankhyaVoxInference
 
+# ── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 
-print("Loading Models for API...")
-# 1. HMM Engine
-hmm_system = SankhyaHMMBase(VOCAB, HMM_STATES, str(MODEL_DIR))
-try:
-    hmm_system.load_models()
-    decoder = ConstrainedViterbiDecoder(hmm_system, all_valid_sequences)
-    print("🏛️ Classical HMM models loaded successfully!")
-except Exception as e:
-    print(f"Warning: HMM Models not found. {e}")
-    decoder = None
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "models", "best")
 
-# 2. Goated SVM Pipeline
-try:
-    svm_classifier = joblib.load(os.path.join(MODEL_DIR, "svm_model.pkl"))
-    print("⚡ Goated SVM Pipeline loaded successfully!")
-except Exception as e:
-    print(f"Warning: SVM Model not found. {e}")
-    svm_classifier = None
+print("Loading SankhyaVox model...")
+model = SankhyaVoxInference.load(MODEL_DIR)
+print(f"Ready. Model: {model.label}\n")
 
-# 3. DNN Pipeline
-try:
-    dnn_classifier = joblib.load(os.path.join(MODEL_DIR, "dnn_model.pkl"))
-    print("🧠 DNN Pipeline loaded successfully!")
-except Exception as e:
-    print(f"Warning: DNN Model not found. {e}")
-    dnn_classifier = None
 
-def chunk_pooling(X):
-    """Pools MFCCs into 5 temporal chunks for the static models."""
-    n_frames = X.shape[0]
-    num_chunks = 5
-    if n_frames < num_chunks:
-        X = np.pad(X, ((0, num_chunks - n_frames), (0, 0)), mode='edge')
-        n_frames = num_chunks
-    embeddings = []
-    chunk_size = n_frames / float(num_chunks)
-    for i in range(num_chunks):
-        s = int(i * chunk_size)
-        e = int((i + 1) * chunk_size)
-        if e == s: e = s + 1
-        embeddings.append(np.mean(X[s:e], axis=0))
-    return np.concatenate(embeddings)
+# ── Helper: save uploaded file to temp, call model, clean up ─────────────────
+
+def _predict_from_request(req, verbose=False):
+    if "file" not in req.files:
+        return {"error": "No audio file. Send as multipart form-data, key='file'."}, 400
+
+    f = req.files["file"]
+    if not f or f.filename == "":
+        return {"error": "Empty filename."}, 400
+
+    # Determine suffix safely (default .wav if no extension)
+    fname  = f.filename or "audio.wav"
+    ext    = fname.rsplit(".", 1)[-1].lower() if "." in fname else "wav"
+    suffix = f".{ext}"
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp_path = tmp.name
+        f.save(tmp_path)
+
+    try:
+        result = model.predict_file(tmp_path, verbose=verbose)
+    except Exception as e:
+        return {"error": str(e)}, 500
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+    return result, 200
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/predict", methods=["POST"])
 def predict():
-    if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
+    """
+    Accept audio file and return recognition result.
 
-    audio_file = request.files['audio']
-    temp_path = "temp_audio_api.wav"
-    audio_file.save(temp_path)
+    Returns JSON:
+        {
+          "number":     int,       # 0–99  (−1 on failure)
+          "tokens":     list[str], # e.g. ["pancha", "dasha"]
+          "score":      float,     # HMM log-likelihood
+          "model":      str,
+          "devanagari": str,       # e.g. "पञ्च–दश"
+          "confidence": str,       # "High" / "Medium" / "Low" / "None"
+          "success":    bool
+        }
+    """
+    result, code = _predict_from_request(request)
+    return jsonify(result), code
 
-    try:
-        import imageio_ffmpeg
-        import subprocess
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-        true_wav_path = "temp_decoded.wav"
-        
-        subprocess.run([
-            ffmpeg_exe, "-y", "-i", temp_path,
-            "-ar", str(SAMPLE_RATE), "-ac", "1", true_wav_path
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        
-        audio, sr = sf.read(true_wav_path)
-        if audio.ndim > 1: audio = audio.mean(axis=1)
-        if sr != SAMPLE_RATE: audio = librosa.resample(audio, orig_sr=sr, target_sr=SAMPLE_RATE)
 
-        audio = preprocess_audio(audio)
-        X = extract_mfcc(audio)
-        
-        results = {}
+@app.route("/debug", methods=["POST"])
+def debug():
+    """
+    Same as /predict but runs decoder in verbose mode.
+    Useful during development to understand segmentation decisions.
+    """
+    result, code = _predict_from_request(request, verbose=True)
+    return jsonify(result), code
 
-        # HMM Prediction
-        if decoder:
-            h_num, h_score = decoder.decode(X)
-            if h_num is not None and h_num > 99:
-                h_num = -1
-                h_toks = ["Out of range"]
-            else:
-                h_toks = number_to_tokens(h_num) if h_num is not None else []
-            h_score = float(h_score) if h_score != float("-inf") else -9999.0
-            results['hmm'] = {'number': h_num if h_num is not None else -1, 'tokens': h_toks, 'score': h_score}
-        
-        if len(X) > 0:
-            emb = chunk_pooling(X)
-            
-            # SVM Prediction
-            if svm_classifier:
-                s_idx = svm_classifier.predict([emb])[0]
-                s_token = IDX_TO_TOKEN[s_idx]
-                s_num = _TOKEN_TO_VALUE.get(s_token, -1)
-                s_score = max(svm_classifier.predict_proba([emb])[0]) * 100
-                results['svm'] = {'number': s_num, 'tokens': [s_token], 'score': s_score}
-                
-            # DNN Prediction
-            if dnn_classifier:
-                d_idx = dnn_classifier.predict([emb])[0]
-                d_token = IDX_TO_TOKEN[d_idx]
-                d_num = _TOKEN_TO_VALUE.get(d_token, -1)
-                d_score = max(dnn_classifier.predict_proba([emb])[0]) * 100
-                results['dnn'] = {'number': d_num, 'tokens': [d_token], 'score': d_score}
 
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        if os.path.exists(true_wav_path):
-            os.remove(true_wav_path)
-            
-        return jsonify(results)
-        
-    except Exception as e:
-        if os.path.exists(temp_path): os.remove(temp_path)
-        if 'true_wav_path' in locals() and os.path.exists(true_wav_path): os.remove(true_wav_path)
-        return jsonify({'error': str(e)}), 500
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok", "model": model.label})
 
+
+@app.route("/info")
+def info():
+    report_path = os.path.join(MODEL_DIR, "eval_report.json")
+    if os.path.exists(report_path):
+        with open(report_path, "r", encoding="utf-8") as fh:
+            report = json.load(fh)
+    else:
+        report = {"note": "eval_report.json not found in model directory"}
+    return jsonify(report)
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)

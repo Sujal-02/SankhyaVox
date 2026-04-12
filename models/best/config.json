@@ -1,0 +1,546 @@
+{
+  "label": "model_A_real_only",
+  "vocab": [
+    "shunya",
+    "eka",
+    "dvi",
+    "tri",
+    "catur",
+    "pancha",
+    "shat",
+    "sapta",
+    "ashta",
+    "nava",
+    "dasha",
+    "vimsati",
+    "shata"
+  ],
+  "devanagari": {
+    "shunya": "शून्य",
+    "eka": "एक",
+    "dvi": "द्वि",
+    "tri": "त्रि",
+    "catur": "चतुर",
+    "pancha": "पञ्च",
+    "shat": "षट",
+    "sapta": "सप्त",
+    "ashta": "अष्ट",
+    "nava": "नव",
+    "dasha": "दश",
+    "vimsati": "विंशति",
+    "shata": "शत"
+  },
+  "grammar": {
+    "0": [
+      "shunya"
+    ],
+    "1": [
+      "eka"
+    ],
+    "2": [
+      "dvi"
+    ],
+    "3": [
+      "tri"
+    ],
+    "4": [
+      "catur"
+    ],
+    "5": [
+      "pancha"
+    ],
+    "6": [
+      "shat"
+    ],
+    "7": [
+      "sapta"
+    ],
+    "8": [
+      "ashta"
+    ],
+    "9": [
+      "nava"
+    ],
+    "10": [
+      "dasha"
+    ],
+    "11": [
+      "dasha",
+      "eka"
+    ],
+    "12": [
+      "dasha",
+      "dvi"
+    ],
+    "13": [
+      "dasha",
+      "tri"
+    ],
+    "14": [
+      "dasha",
+      "catur"
+    ],
+    "15": [
+      "dasha",
+      "pancha"
+    ],
+    "16": [
+      "dasha",
+      "shat"
+    ],
+    "17": [
+      "dasha",
+      "sapta"
+    ],
+    "18": [
+      "dasha",
+      "ashta"
+    ],
+    "19": [
+      "dasha",
+      "nava"
+    ],
+    "20": [
+      "vimsati"
+    ],
+    "21": [
+      "vimsati",
+      "eka"
+    ],
+    "22": [
+      "vimsati",
+      "dvi"
+    ],
+    "23": [
+      "vimsati",
+      "tri"
+    ],
+    "24": [
+      "vimsati",
+      "catur"
+    ],
+    "25": [
+      "vimsati",
+      "pancha"
+    ],
+    "26": [
+      "vimsati",
+      "shat"
+    ],
+    "27": [
+      "vimsati",
+      "sapta"
+    ],
+    "28": [
+      "vimsati",
+      "ashta"
+    ],
+    "29": [
+      "vimsati",
+      "nava"
+    ],
+    "30": [
+      "tri",
+      "dasha"
+    ],
+    "31": [
+      "tri",
+      "dasha",
+      "eka"
+    ],
+    "32": [
+      "tri",
+      "dasha",
+      "dvi"
+    ],
+    "33": [
+      "tri",
+      "dasha",
+      "tri"
+    ],
+    "34": [
+      "tri",
+      "dasha",
+      "catur"
+    ],
+    "35": [
+      "tri",
+      "dasha",
+      "pancha"
+    ],
+    "36": [
+      "tri",
+      "dasha",
+      "shat"
+    ],
+    "37": [
+      "tri",
+      "dasha",
+      "sapta"
+    ],
+    "38": [
+      "tri",
+      "dasha",
+      "ashta"
+    ],
+    "39": [
+      "tri",
+      "dasha",
+      "nava"
+    ],
+    "40": [
+      "catur",
+      "dasha"
+    ],
+    "41": [
+      "catur",
+      "dasha",
+      "eka"
+    ],
+    "42": [
+      "catur",
+      "dasha",
+      "dvi"
+    ],
+    "43": [
+      "catur",
+      "dasha",
+      "tri"
+    ],
+    "44": [
+      "catur",
+      "dasha",
+      "catur"
+    ],
+    "45": [
+      "catur",
+      "dasha",
+      "pancha"
+    ],
+    "46": [
+      "catur",
+      "dasha",
+      "shat"
+    ],
+    "47": [
+      "catur",
+      "dasha",
+      "sapta"
+    ],
+    "48": [
+      "catur",
+      "dasha",
+      "ashta"
+    ],
+    "49": [
+      "catur",
+      "dasha",
+      "nava"
+    ],
+    "50": [
+      "pancha",
+      "dasha"
+    ],
+    "51": [
+      "pancha",
+      "dasha",
+      "eka"
+    ],
+    "52": [
+      "pancha",
+      "dasha",
+      "dvi"
+    ],
+    "53": [
+      "pancha",
+      "dasha",
+      "tri"
+    ],
+    "54": [
+      "pancha",
+      "dasha",
+      "catur"
+    ],
+    "55": [
+      "pancha",
+      "dasha",
+      "pancha"
+    ],
+    "56": [
+      "pancha",
+      "dasha",
+      "shat"
+    ],
+    "57": [
+      "pancha",
+      "dasha",
+      "sapta"
+    ],
+    "58": [
+      "pancha",
+      "dasha",
+      "ashta"
+    ],
+    "59": [
+      "pancha",
+      "dasha",
+      "nava"
+    ],
+    "60": [
+      "shat",
+      "dasha"
+    ],
+    "61": [
+      "shat",
+      "dasha",
+      "eka"
+    ],
+    "62": [
+      "shat",
+      "dasha",
+      "dvi"
+    ],
+    "63": [
+      "shat",
+      "dasha",
+      "tri"
+    ],
+    "64": [
+      "shat",
+      "dasha",
+      "catur"
+    ],
+    "65": [
+      "shat",
+      "dasha",
+      "pancha"
+    ],
+    "66": [
+      "shat",
+      "dasha",
+      "shat"
+    ],
+    "67": [
+      "shat",
+      "dasha",
+      "sapta"
+    ],
+    "68": [
+      "shat",
+      "dasha",
+      "ashta"
+    ],
+    "69": [
+      "shat",
+      "dasha",
+      "nava"
+    ],
+    "70": [
+      "sapta",
+      "dasha"
+    ],
+    "71": [
+      "sapta",
+      "dasha",
+      "eka"
+    ],
+    "72": [
+      "sapta",
+      "dasha",
+      "dvi"
+    ],
+    "73": [
+      "sapta",
+      "dasha",
+      "tri"
+    ],
+    "74": [
+      "sapta",
+      "dasha",
+      "catur"
+    ],
+    "75": [
+      "sapta",
+      "dasha",
+      "pancha"
+    ],
+    "76": [
+      "sapta",
+      "dasha",
+      "shat"
+    ],
+    "77": [
+      "sapta",
+      "dasha",
+      "sapta"
+    ],
+    "78": [
+      "sapta",
+      "dasha",
+      "ashta"
+    ],
+    "79": [
+      "sapta",
+      "dasha",
+      "nava"
+    ],
+    "80": [
+      "ashta",
+      "dasha"
+    ],
+    "81": [
+      "ashta",
+      "dasha",
+      "eka"
+    ],
+    "82": [
+      "ashta",
+      "dasha",
+      "dvi"
+    ],
+    "83": [
+      "ashta",
+      "dasha",
+      "tri"
+    ],
+    "84": [
+      "ashta",
+      "dasha",
+      "catur"
+    ],
+    "85": [
+      "ashta",
+      "dasha",
+      "pancha"
+    ],
+    "86": [
+      "ashta",
+      "dasha",
+      "shat"
+    ],
+    "87": [
+      "ashta",
+      "dasha",
+      "sapta"
+    ],
+    "88": [
+      "ashta",
+      "dasha",
+      "ashta"
+    ],
+    "89": [
+      "ashta",
+      "dasha",
+      "nava"
+    ],
+    "90": [
+      "nava",
+      "dasha"
+    ],
+    "91": [
+      "nava",
+      "dasha",
+      "eka"
+    ],
+    "92": [
+      "nava",
+      "dasha",
+      "dvi"
+    ],
+    "93": [
+      "nava",
+      "dasha",
+      "tri"
+    ],
+    "94": [
+      "nava",
+      "dasha",
+      "catur"
+    ],
+    "95": [
+      "nava",
+      "dasha",
+      "pancha"
+    ],
+    "96": [
+      "nava",
+      "dasha",
+      "shat"
+    ],
+    "97": [
+      "nava",
+      "dasha",
+      "sapta"
+    ],
+    "98": [
+      "nava",
+      "dasha",
+      "ashta"
+    ],
+    "99": [
+      "nava",
+      "dasha",
+      "nava"
+    ]
+  },
+  "hmm_config": {
+    "shunya": [
+      5,
+      2
+    ],
+    "eka": [
+      4,
+      4
+    ],
+    "dvi": [
+      3,
+      4
+    ],
+    "tri": [
+      3,
+      4
+    ],
+    "catur": [
+      4,
+      2
+    ],
+    "pancha": [
+      4,
+      4
+    ],
+    "shat": [
+      3,
+      4
+    ],
+    "sapta": [
+      4,
+      2
+    ],
+    "ashta": [
+      4,
+      2
+    ],
+    "nava": [
+      4,
+      2
+    ],
+    "dasha": [
+      4,
+      4
+    ],
+    "vimsati": [
+      5,
+      2
+    ],
+    "shata": [
+      4,
+      4
+    ]
+  },
+  "sample_rate": 16000,
+  "n_features": 39,
+  "vad_top_db": 28,
+  "vad_min_dur_s": 0.06,
+  "vad_max_segs": 3,
+  "eval_gap_ms": 300
+}

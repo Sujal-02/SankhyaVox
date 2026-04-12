@@ -1,0 +1,80 @@
+{
+  "shunya": {
+    "n_samples": 945,
+    "total_frames": 72431,
+    "avg_train_loglik": -3314.319613766027,
+    "train_sec": 466.82
+  },
+  "eka": {
+    "n_samples": 945,
+    "total_frames": 65092,
+    "avg_train_loglik": -3258.992209705894,
+    "train_sec": 195.21
+  },
+  "dvi": {
+    "n_samples": 945,
+    "total_frames": 60603,
+    "avg_train_loglik": -3305.902733397782,
+    "train_sec": 236.78
+  },
+  "tri": {
+    "n_samples": 945,
+    "total_frames": 59136,
+    "avg_train_loglik": -3402.873328438896,
+    "train_sec": 226.56
+  },
+  "catur": {
+    "n_samples": 945,
+    "total_frames": 75299,
+    "avg_train_loglik": -4081.051176588547,
+    "train_sec": 463.57
+  },
+  "pancha": {
+    "n_samples": 945,
+    "total_frames": 72384,
+    "avg_train_loglik": -3746.5160587288256,
+    "train_sec": 256.65
+  },
+  "shat": {
+    "n_samples": 945,
+    "total_frames": 54272,
+    "avg_train_loglik": -2495.269811030217,
+    "train_sec": 87.24
+  },
+  "sapta": {
+    "n_samples": 945,
+    "total_frames": 82087,
+    "avg_train_loglik": -4575.138969951755,
+    "train_sec": 185.35
+  },
+  "ashta": {
+    "n_samples": 945,
+    "total_frames": 72026,
+    "avg_train_loglik": -3732.7019381297446,
+    "train_sec": 169.39
+  },
+  "nava": {
+    "n_samples": 945,
+    "total_frames": 71825,
+    "avg_train_loglik": -3818.588869053772,
+    "train_sec": 97.74
+  },
+  "dasha": {
+    "n_samples": 945,
+    "total_frames": 66090,
+    "avg_train_loglik": -2896.7489374197826,
+    "train_sec": 118.53
+  },
+  "vimsati": {
+    "n_samples": 945,
+    "total_frames": 72697,
+    "avg_train_loglik": -4034.2316970757624,
+    "train_sec": 194.19
+  },
+  "shata": {
+    "n_samples": 945,
+    "total_frames": 64201,
+    "avg_train_loglik": -14610.82426558414,
+    "train_sec": 94.17
+  }
+}
