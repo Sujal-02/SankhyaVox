@@ -1,0 +1,359 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SankhyaVox – Glassmorphism UI
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --text-primary: #f0f0f0;
+  --text-secondary: rgba(240, 240, 240, 0.6);
+  --accent: #7c8cf8;
+  --accent-glow: rgba(124, 140, 248, 0.4);
+  --danger: #f87171;
+  --danger-glow: rgba(248, 113, 113, 0.4);
+  --success: #6ee7b7;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0f0f1a;
+  color: var(--text-primary);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Ambient background blobs ─────────────────────────────────────── */
+
+.bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.35;
+  z-index: 0;
+  animation: float 20s ease-in-out infinite;
+}
+
+.blob-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #4f46e5, transparent);
+  top: -10%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.blob-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #7c3aed, transparent);
+  bottom: 10%;
+  right: -8%;
+  animation-delay: -7s;
+}
+
+.blob-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #2563eb, transparent);
+  top: 40%;
+  left: 50%;
+  animation-delay: -14s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(30px, -20px) scale(1.05); }
+  66%      { transform: translate(-20px, 15px) scale(0.95); }
+}
+
+/* ── Glass mixin ──────────────────────────────────────────────────── */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+
+.app-header {
+  z-index: 1;
+  text-align: center;
+  padding: 2.5rem 1rem 0.5rem;
+}
+
+.app-header h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #a5b4fc, #818cf8, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Result area (centre) ─────────────────────────────────────────── */
+
+.result-area {
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.result-number {
+  font-size: 7rem;
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+  text-shadow: 0 0 40px var(--accent-glow);
+  transition: all 0.4s ease;
+  min-height: 8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-number.success {
+  color: var(--success);
+  text-shadow: 0 0 60px rgba(110, 231, 183, 0.5);
+}
+
+.result-number.error {
+  font-size: 1.4rem;
+  color: var(--danger);
+  text-shadow: 0 0 30px var(--danger-glow);
+}
+
+.result-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 340px;
+  min-height: 1.2rem;
+}
+
+/* ── Audio playback bar ───────────────────────────────────────────── */
+
+.playback-bar {
+  z-index: 1;
+  width: min(520px, 92vw);
+  border-radius: 14px;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.6rem;
+  animation: fade-in 0.3s ease;
+}
+
+.playback-bar audio {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  outline: none;
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Control bar (bottom) ─────────────────────────────────────────── */
+
+.control-bar {
+  z-index: 1;
+  width: min(520px, 92vw);
+  margin-bottom: 2.5rem;
+  border-radius: 20px;
+  padding: 1.2rem 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Settings row */
+
+.settings-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.setting-group label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.setting-group select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.setting-group select:focus {
+  border-color: var(--accent);
+}
+
+.setting-group select option {
+  background: #1e1e2e;
+  color: var(--text-primary);
+}
+
+/* Actions row */
+
+.actions-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-record.recording {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: pulse-record 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-record {
+  0%, 100% { box-shadow: 0 0 0 0 var(--danger-glow); }
+  50%      { box-shadow: 0 0 0 8px transparent; }
+}
+
+.btn-submit {
+  background: rgba(124, 140, 248, 0.15);
+  border-color: rgba(124, 140, 248, 0.3);
+  color: var(--accent);
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: rgba(124, 140, 248, 0.25);
+}
+
+.btn-submit:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-submit:disabled:hover {
+  background: rgba(124, 140, 248, 0.15);
+  border-color: rgba(124, 140, 248, 0.3);
+}
+
+/* Status bar */
+
+.status-bar {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-align: center;
+  min-height: 1rem;
+  transition: color 0.2s;
+}
+
+.status-bar.loading {
+  color: var(--accent);
+}
+
+.status-bar.error {
+  color: var(--danger);
+}
+
+/* ── Spinner overlay ──────────────────────────────────────────────── */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 0.4rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .result-number {
+    font-size: 5rem;
+  }
+  .control-bar {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+  }
+  .actions-row {
+    flex-wrap: wrap;
+  }
+}

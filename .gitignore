@@ -1,0 +1,10 @@
+/data
+/data_processed
+/checkpoints
+/temp
+__pycache__/
+*.pyc
+.venv/
+
+*.zip
+.vscode/

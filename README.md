@@ -1,32 +1,336 @@
 # SankhyaVox
 **Minimal-Vocabulary Sanskrit Spoken Digit Recognition**
 
-SankhyaVox is an acoustic model and grammar-constrained speech recognition system that accurately recognises spoken Sanskrit numbers 0–99 using only **13 base recordings** per speaker (`śūnya`, `eka`, `dvi`, ..., `viṁśati`, `śata`). Built with classical HMM (Hidden Markov Model) techniques, it exploits Sanskrit's highly compositional grammatical structure to assemble acoustic base units into larger numbers the system has never been explicitly trained on.
+SankhyaVox is an acoustic model and grammar-constrained speech recognition system that accurately recognises spoken Sanskrit numbers 0-99 using only **13 base recordings** per speaker (`shunya`, `eka`, `dvi`, ..., `vimsati`, `shata`). Built with classical HMM (Hidden Markov Model) techniques, it exploits Sanskrit's highly compositional grammatical structure to assemble acoustic base units into larger numbers the system has never been explicitly trained on.
 
-## Quick Setup
+## Directory Overview
+
+```
+SankhyaVox/
+├── data/                 # DVC-tracked raw human recordings (immutable source)
+├── data_processed/       # Runtime-generated outputs (git-ignored)
+│   ├── human/            #   converted WAVs, segments, MFCC features
+│   ├── tts/              #   TTS-generated audio and features
+│   ├── augmented/        #   pitch/speed-augmented segments and features
+│   ├── human.csv         #   metadata index for human samples
+│   ├── tts.csv           #   metadata index for TTS samples
+│   └── augmented.csv     #   metadata index for augmented samples
+├── dataset/              # Python module: data pipeline + dataset class
+│   ├── dataset.py        #   SankhyaVoxDataset (CSV-backed, indexed)
+│   ├── pipeline.py       #   DataPipeline (convert, segment, augment, extract, CSV gen, infer)
+│   ├── augmentor.py      #   Pitch/speed augmentation logic
+│   ├── generator.py      #   TTS generation logic
+│   └── segmentor.py      #   VAD segmentation + QA
+├── models/               # Model definitions (committed code, not weights)
+│   ├── hmm_classifier.py #   GMM-HMM (Bakis left-to-right, per-token, Baum-Welch)
+│   ├── gmm_classifier.py #   GMM baseline (312-dim features, per-class max-likelihood)
+│   ├── knn_dtw_classifier.py  # k-NN + DTW (Sakoe-Chiba, distance-weighted)
+│   └── svm_classifier.py #   SVM baseline (352-dim features, RBF, grid search)
+├── notebooks/            # Jupyter notebooks (self-contained, no project imports)
+│   ├── baseline_training.ipynb  # Legacy combined baseline notebook
+│   ├── train_gmm.ipynb          # GMM train/eval on augmented data
+│   ├── train_knn_dtw.ipynb      # k-NN+DTW train/eval on augmented data
+│   └── train_svm.ipynb          # SVM train/eval on augmented data
+├── checkpoints/          # DVC-tracked saved model weights (git-ignored, auto-generated)
+├── results/              # Evaluation outputs
+├── scripts/              # CLI entry points and demo scripts
+├── src/                  # Core modules
+│   ├── config.py         #   central paths, constants, hyperparameters
+│   ├── grammar.py        #   BNF grammar, FSA, number-token maps
+│   ├── decoder.py        #   Grammar-constrained Viterbi decoder (0–99)
+│   └── viz.py            #   feature visualisation (spectrogram, MFCC, waveform)
+├── app/                  # Flask web application
+│   ├── server.py         #   Flask backend (API: /api/decode, /api/checkpoints)
+│   ├── templates/        #   HTML (Jinja2 template)
+│   └── static/           #   CSS + JS (glassmorphism UI)
+├── docs/
+│   ├── guide/            #   roadmap, task checklist, speaker recording guide
+│   └── report/           #   technical report (LaTeX + PDF)
+├── data.dvc              # DVC metadata tracking data/
+├── requirements.txt
+└── README.md
+```
+
+## Setup
 
 ### 1. Prerequisites
-Ensure you have Python 3.9+ installed.
+
+- **Python 3.9+**
+- **Git**
+- **DVC with Google Drive support** — installed as `dvc[gdrive]`
+- **FFmpeg** — required for audio format conversion (`.m4a`, `.aac`, `.mp3`, etc.)
 
 ### 2. Installation
-Clone the project, navigate into the directory, and install dependencies:
+
 ```bash
 git clone https://github.com/Sujal-02/SankhyaVox.git
 cd SankhyaVox
+
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# macOS / Linux
+# source .venv/bin/activate
+
 pip install -r requirements.txt
+pip install "dvc[gdrive]"
 ```
 
-### 3. Usage & Next Steps
-The system is built sequentially in phases. To begin:
+### 3. Google Drive Remote — Collaborator Access
 
-- **Configure Settings:** Check `src/config.py` for variables (MFCC specs, paths, vocab).
-- **Audio Processing:** Once your raw audio datasets are placed in `data/raw/<SpeakerID>/`, segment them automatically using energy-based Voice Activity Detection:
-  ```bash
-  python scripts/segment.py
-  ```
-- **Feature Extraction:** Extract 39-dimensional MFCCs (Cepstral sequences) from segmented files:
-  ```bash
-  python scripts/extract_features.py
-  ```
+This project uses a **Google Drive folder** as the DVC storage backend. Before you can `dvc pull` or `dvc push`, you need:
 
-Check out the `walkthrough.md` or the `task.md` checklists for a detailed breakdown of the complete project pipeline!
+1. **Google Drive folder access** — the project maintainer must share the Drive folder with your Google account (Viewer for pull, Editor for push).
+2. **Google Cloud OAuth test-user access** — if the OAuth consent screen is in **Testing** mode (External app type), the maintainer must add your email under **Test users** in Google Cloud Console.
+
+First-time `dvc pull` / `dvc push` will open a browser-based OAuth flow to authorise your account.
+
+### 4. Pull Raw Data
+
+```bash
+dvc pull
+```
+
+This downloads the DVC-tracked `data/` folder containing raw speaker recordings.
+
+### 5. Run the Processing Pipeline
+
+`DataPipeline` handles all data preparation — format conversion, segmentation, QA, and feature extraction. `SankhyaVoxDataset` provides indexed access over the processed features.
+
+```python
+from dataset import DataPipeline, SankhyaVoxDataset
+
+pipe = DataPipeline()
+
+# Step 1: Convert raw audio (any format) to standardised 16kHz mono WAV
+pipe.convert()          # data/ → data_processed/human/raw/
+
+# Step 2: Segment repeated-utterance recordings into individual clips
+pipe.segment()          # → data_processed/human/segments/
+
+# Step 3: Validate segment quality
+pipe.validate(mode="qa")
+
+# Step 4: Extract 39-dim MFCC features
+pipe.extract_features("human")   # → data_processed/human/features/
+
+# Or run all steps at once:
+pipe.build()
+```
+
+#### TTS data
+
+```python
+pipe.generate_tts()              # requires: pip install edge_tts
+pipe.extract_features("tts")
+```
+
+#### Augmented data
+
+Augmentation applies all permutations of pitch shifts and speed factors
+(configured in `src/config.py` as `AUG_PITCHES` and `AUG_SPEEDS`) to
+existing segmented WAVs.
+
+```python
+# Augment all human speakers
+pipe.augment("human")            # → data_processed/augmented/segments/augS01/ ...
+
+# Augment a single speaker
+pipe.augment("data_processed/human/segments/S02")
+
+# Augment TTS speakers
+pipe.augment("tts")
+
+# Augment everything (human + TTS)
+pipe.augment("all")
+
+# Then extract features and generate CSV
+pipe.extract_features("augmented")
+pipe.generate_csv("augmented")
+```
+
+Output naming convention:
+```
+augmented/segments/augS01/augS01_000_01_p0_f0.wav
+                          ^^^^^^           ^^^^^
+                          aug prefix       pitch/speed indices
+```
+
+#### Loading the dataset
+
+```python
+ds = SankhyaVoxDataset()
+sample = ds[0]               # dict with audio_path, audio_source, speaker_id, token, label, feature
+sample = ds.human[0]         # human-only index
+sample = ds.tts[0]           # tts-only index
+print(ds.summary())
+print(ds.df.head())          # pandas DataFrame with full metadata
+```
+
+#### CLI usage
+
+```bash
+# Full human pipeline (convert → segment → QA → features → CSV)
+python scripts/demo_data_process.py --human
+
+# TTS pipeline
+python scripts/demo_data_process.py --tts
+
+# Augment all categories
+python scripts/demo_data_process.py --augment
+
+# Augment only human data
+python scripts/demo_data_process.py --augment human
+
+# Augment a specific speaker
+python scripts/demo_data_process.py --augment data_processed/human/segments/S02
+
+# Combine: process human pipeline then augment S02
+python scripts/demo_data_process.py --human --augment data_processed/human/segments/S02
+```
+
+#### Single-file inference (live testing)
+
+For live testing where a user says a number once (no segmentation needed):
+
+```python
+features = pipe.process_single("path/to/test_audio.m4a")
+# features is a numpy array of shape (n_frames, 39)
+# ready to feed directly into the decoder
+```
+
+## Grammar-Constrained Decoding
+
+The grammar-constrained Viterbi decoder (`src/decoder.py`) recognises compound Sanskrit numbers (0–99) from audio using the trained HMM classifier.
+
+### CLI usage
+
+```bash
+# Decode with default HMM checkpoint
+python scripts/demo_decode_sound.py path/to/recording.wav
+
+# Decode with a specific HMM checkpoint
+python scripts/demo_decode_sound.py path/to/recording.wav --checkpoint checkpoints/hmm_classifier.pkl
+
+# Verbose mode — prints MFCC shape, Viterbi path, grammar parse
+python scripts/demo_decode_sound.py path/to/recording.wav -v
+```
+
+### Python API
+
+```python
+from scripts.demo_decode_sound import decode_audio
+
+result, tokens, debug = decode_audio(
+    "path/to/recording.wav",
+    checkpoint_path=None,       # uses default, or pass explicit path
+    verbose=True,
+)
+print(result)    # e.g. 57
+print(tokens)    # e.g. ['pancha', 'dasha', 'sapta']
+```
+
+## Web Application
+
+A Flask web UI (`app/`) provides the same decoding functionality through a browser interface with a glassmorphism design.
+
+### Setup & Launch
+
+```bash
+pip install flask
+python app/server.py
+```
+
+Open `http://127.0.0.1:5000` in your browser.
+
+### Features
+
+- **Checkpoint picker** — select from available HMM checkpoints in `checkpoints/`
+- **Audio input** — upload a file or record directly from the microphone
+- **Audio playback** — replay the source audio after decoding
+- **Live decoding** — displays the recognised integer (0–99) with token breakdown and confidence score
+
+## Data Change Workflow (DVC + Google Drive)
+
+When you add, remove, or modify files under `data/`, follow this 3-step loop:
+
+```bash
+# 1) Update DVC tracking metadata
+dvc add data/
+
+# 2) Commit the metadata receipt to Git
+git add data.dvc
+git commit -m "Update data: <briefly describe what changed>"
+
+# 3) Push data blobs to Google Drive
+dvc push
+```
+
+### Collaborator Sync
+
+After someone pushes data changes:
+
+```bash
+git pull
+dvc pull
+```
+
+### Verify Data State
+
+```bash
+dvc status -c
+```
+
+## Collaborator Quick-Reference
+
+| Action | Commands |
+|---|---|
+| **First-time setup** | Clone, install deps, `dvc pull` (triggers OAuth) |
+| **Get latest data** | `git pull` then `dvc pull` |
+| **Push data changes** | `dvc add data/` → `git add data.dvc` → `git commit` → `dvc push` |
+| **Auth issues** | Confirm Drive folder access + Test User in Google Cloud |
+
+## Documentation
+
+| Document | Path | Contents |
+|---|---|---|
+| **Project Roadmap** | `docs/guide/roadmap.md` | Architecture overview, directory layout, implementation phases, design decisions, next steps |
+| **Task Checklist** | `docs/guide/tasks.md` | Phase-by-phase checklist with completion status |
+| **Speaker Recording Guide** | `docs/guide/speaker_guide/` | LaTeX instruction sheet + PDF for distributing to speakers |
+| **Technical Report** | `docs/report/SankhyaVox_Technical_Report.tex` | Full system specification — grammar, HMM design, evaluation plan, baselines, bibliography |
+| **Baseline Model Training** | `notebooks/train_*.ipynb` | GMM, HMM, k-NN+DTW, SVM train/eval |
+
+## Baseline Model Training
+
+Each baseline model has a dedicated self-contained notebook under `notebooks/`.
+The workflow for each:
+
+1. **Load** — augmented dataset only (`data_processed/augmented.csv`)
+2. **Exclude** — one human speaker's augmented data (e.g. `augS05`)
+3. **Train** — fit model on remaining augmented data
+4. **Save** — checkpoint to `checkpoints/`
+5. **Load** — reload from checkpoint
+6. **Test** — evaluate on the excluded speaker's real human segments (`data_processed/human.csv`)
+7. **Results** — accuracy, classification report, confusion matrix, per-class breakdown
+
+To train, open the notebook, paste the model class from `models/`, and run all cells.
+Change `TEST_SPEAKER` in the config cell to hold out a different speaker.
+
+| **Baseline Model Training** | `notebooks/train_*.ipynb` | GMM, HMM, k-NN+DTW, SVM train/eval |
+
+### Model Feature Transforms
+
+| Model | Transform Dim | Key Features |
+|---|---|---|
+| HMM | 39 × T | Full MFCC sequences, per-frame scoring via GMM-HMM per token |
+| GMM | 312 | mean, std, min, max, median, q25, q75, delta-mean per MFCC coeff |
+| k-NN+DTW | 13 × T | Static MFCCs only (strips Δ/ΔΔ), per-utterance z-normalisation |
+| SVM | 352 | mean, std, min, max, median, q10, q90, IQR, delta-abs-mean, log-duration |
+
+## Notes
+
+- All paths and hyperparameters are defined in `src/config.py`.
+- Token vocabulary uses ASCII labels from `src/config.py` (`VOCAB`).
+- Feature visualisation tools (spectrograms, MFCC heatmaps, comparisons) are in `src/viz.py`.
+- Keep DVC credentials in `.dvc/config.local` only — never commit secrets to `.dvc/config`.
+- `data_processed/` and `models/` are git-ignored and regenerated at runtime.
