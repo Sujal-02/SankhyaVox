@@ -10,11 +10,14 @@ Requires a trained ``SankhyaHMM`` checkpoint (one GMM-HMM per token).
 """
 
 from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 
 import numpy as np
 
-from src.config import TOKEN_TO_VALUE, VALUE_TO_TOKEN, VOCAB
+from src.config import TOKEN_TO_VALUE, VOCAB
 from src.grammar import all_valid_sequences, tokens_to_number
+
+DEFAULT_CHECKPOINT = "checkpoints/hmm_classifier.pkl"
 
 
 def _build_successor_map() -> Dict[str, set]:
@@ -256,3 +259,99 @@ class GrammarConstrainedDecoder:
             "recognized_integer": integer_result,
         }
         return integer_result, token_seq, debug
+
+
+class IsolatedTokenDecoder:
+    """
+    Decode a single isolated token from an MFCC segment.
+
+    Thin wrapper around ``SankhyaHMM.predict_with_scores``.
+
+    Parameters
+    ----------
+    hmm : SankhyaHMM
+        Trained HMM bank (one model per token label).
+    """
+
+    def __init__(self, hmm):
+        self.hmm = hmm
+
+    def decode(
+        self, mfcc: np.ndarray, verbose: bool = False
+    ) -> Tuple[str, int, dict]:
+        """
+        Decode an MFCC matrix into a single token prediction.
+
+        Returns
+        -------
+        token : str
+            Best-matching token name (e.g. "eka", "dasha").
+        label : int
+            Numeric value of the token (e.g. 1, 10).
+        debug : dict
+            All token scores, best token, and top-3 ranking.
+        """
+        token, label, debug = self.hmm.predict_with_scores(mfcc)
+
+        if verbose:
+            print(f"  MFCC shape: {mfcc.shape}  ({mfcc.shape[0] / 100:.2f}s)")
+            ranked = sorted(debug["scores"].items(), key=lambda x: x[1], reverse=True)
+            for tok, sc in ranked:
+                marker = " ◀" if tok == token else ""
+                print(f"    {tok:>10s}: {sc:+.4f}{marker}")
+
+        return token, label, debug
+
+
+# ── Public convenience function ───────────────────────────────────────────
+
+def decode_audio(hmm, audio_path: str, verbose: bool = False,
+                 isolated: bool = False, return_audio: bool = False):
+    """Decode a single audio file.
+
+    Parameters
+    ----------
+    hmm : SankhyaHMM
+        Pre-loaded HMM model bank.
+    audio_path : str
+        Path to the audio file.
+    verbose : bool
+        Print debug information.
+    isolated : bool
+        When False (default), uses GrammarConstrainedDecoder to recognise
+        a compound number (0-99).  When True, uses IsolatedTokenDecoder
+        to predict a single token.
+    return_audio : bool
+        When True, appends the preprocessed audio waveform to the return
+        tuple.
+    """
+    from dataset.pipeline import DataPipeline
+
+    audio = Path(audio_path)
+    if not audio.exists():
+        raise FileNotFoundError(f"Audio file not found: {audio}")
+
+    pipe = DataPipeline()
+    pipe_result = pipe.process_single(str(audio), return_audio=return_audio)
+
+    if return_audio:
+        mfcc, preprocessed_audio = pipe_result
+    else:
+        mfcc = pipe_result
+        preprocessed_audio = None
+
+    if verbose:
+        print(f"Processing: {audio}")
+        print(f"  MFCC shape: {mfcc.shape}  ({mfcc.shape[0] / 100:.2f}s)")
+        print(f"  Mode: {'isolated token' if isolated else 'grammar-constrained'}")
+
+    if isolated:
+        decoder = IsolatedTokenDecoder(hmm)
+        result = decoder.decode(mfcc, verbose=verbose)
+    else:
+        decoder = GrammarConstrainedDecoder(hmm)
+        result = decoder.decode(mfcc, verbose=verbose)
+
+    if return_audio:
+        return *result, preprocessed_audio
+    return result

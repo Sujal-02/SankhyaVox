@@ -482,7 +482,8 @@ class DataPipeline:
         self,
         audio_path: str,
         output_npy: Optional[str] = None,
-    ) -> np.ndarray:
+        return_audio: bool = False,
+    ) -> Any:
         """
         Standardise and extract features from a single audio file.
 
@@ -501,6 +502,10 @@ class DataPipeline:
         Returns
         -------
         features : np.ndarray of shape ``(n_frames, 39)``
+            When *return_audio* is False (default).
+        (features, preprocessed_audio) : tuple
+            When *return_audio* is True, also returns the preprocessed
+            audio waveform as a 1-D float32 array at ``SAMPLE_RATE``.
         """
         import tempfile
 
@@ -544,6 +549,8 @@ class DataPipeline:
                 os.makedirs(os.path.dirname(output_npy), exist_ok=True)
                 np.save(output_npy, features)
 
+            if return_audio:
+                return features, audio
             return features
         finally:
             if needs_convert:

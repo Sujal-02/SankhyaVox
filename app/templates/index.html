@@ -20,23 +20,53 @@
 
   <!-- Result display -->
   <div class="result-area">
-    <div id="result-display" class="result-number">—</div>
-    <div id="result-meta" class="result-meta"></div>
+    <!-- Rank 1 -->
+    <div class="result-rank rank-1">
+      <div id="result-label-1" class="result-label"></div>
+      <div id="result-display-1" class="result-number">—</div>
+      <div id="result-meta-1" class="result-meta"></div>
+    </div>
+    <!-- Rank 2 (isolated mode only) -->
+    <div id="rank-2" class="result-rank rank-2" hidden>
+      <div id="result-display-2" class="result-number">—</div>
+      <div id="result-meta-2" class="result-meta"></div>
+    </div>
+    <!-- Rank 3 (isolated mode only) -->
+    <div id="rank-3" class="result-rank rank-3" hidden>
+      <div id="result-display-3" class="result-number">—</div>
+      <div id="result-meta-3" class="result-meta"></div>
+    </div>
   </div>
 
   <!-- Audio playback (shown after decode) -->
   <div id="playback-bar" class="playback-bar glass" hidden>
-    <audio id="audio-player" controls></audio>
+    <div class="playback-pair">
+      <div class="playback-item">
+        <span class="playback-label">Original</span>
+        <audio id="audio-original" controls></audio>
+      </div>
+      <div class="playback-item">
+        <span class="playback-label">Preprocessed</span>
+        <audio id="audio-processed" controls></audio>
+      </div>
+    </div>
   </div>
 
   <!-- Bottom control bar -->
   <div class="control-bar glass">
-    <!-- Checkpoint setting -->
+    <!-- Checkpoint & mode settings -->
     <div class="settings-row">
       <div class="setting-group">
         <label for="checkpoint-select">HMM Checkpoint</label>
         <select id="checkpoint-select">
           <option value="">default</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="mode-select">Decoder Mode</label>
+        <select id="mode-select">
+          <option value="compound" selected>Compound (0–99)</option>
+          <option value="isolated">Isolated Token</option>
         </select>
       </div>
     </div>

@@ -7,14 +7,23 @@
 
   // ── DOM refs ──────────────────────────────────────────────────────
   const checkpointSelect = document.getElementById("checkpoint-select");
+  const modeSelect = document.getElementById("mode-select");
   const btnRecord = document.getElementById("btn-record");
   const btnSubmit = document.getElementById("btn-submit");
   const fileInput = document.getElementById("file-input");
-  const resultDisplay = document.getElementById("result-display");
-  const resultMeta = document.getElementById("result-meta");
+  const resultLabel1 = document.getElementById("result-label-1");
+  const resultDisplay1 = document.getElementById("result-display-1");
+  const resultMeta1 = document.getElementById("result-meta-1");
+  const resultDisplay2 = document.getElementById("result-display-2");
+  const resultMeta2 = document.getElementById("result-meta-2");
+  const rank2 = document.getElementById("rank-2");
+  const resultDisplay3 = document.getElementById("result-display-3");
+  const resultMeta3 = document.getElementById("result-meta-3");
+  const rank3 = document.getElementById("rank-3");
   const statusBar = document.getElementById("status-bar");
   const playbackBar = document.getElementById("playback-bar");
-  const audioPlayer = document.getElementById("audio-player");
+  const audioOriginal = document.getElementById("audio-original");
+  const audioProcessed = document.getElementById("audio-processed");
   let audioObjectUrl = null;   // revocable URL for playback
 
   // ── State ─────────────────────────────────────────────────────────
@@ -132,47 +141,79 @@
     if (!audioBlob) return;
 
     btnSubmit.disabled = true;
-    resultDisplay.className = "result-number";
-    resultDisplay.textContent = "—";
-    resultMeta.textContent = "";
+    resultLabel1.textContent = "";
+    resultDisplay1.className = "result-number";
+    resultDisplay1.textContent = "—";
+    resultMeta1.textContent = "";
+    resultDisplay2.textContent = "—";
+    resultMeta2.textContent = "";
+    rank2.hidden = true;
+    resultDisplay3.textContent = "—";
+    resultMeta3.textContent = "";
+    rank3.hidden = true;
     playbackBar.hidden = true;
-    audioPlayer.pause();
-    audioPlayer.removeAttribute("src");
+    audioOriginal.pause();
+    audioOriginal.removeAttribute("src");
+    audioProcessed.pause();
+    audioProcessed.removeAttribute("src");
     setStatus('<span class="spinner"></span>Decoding…', "loading");
 
     const formData = new FormData();
     formData.append("audio", audioBlob, audioFileName);
     formData.append("checkpoint", checkpointSelect.value);
+    formData.append("mode", modeSelect.value);
 
     try {
       const res = await fetch("/api/decode", { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        resultDisplay.className = "result-number error";
-        resultDisplay.textContent = data.error || "Unknown error";
+        resultDisplay1.className = "result-number error";
+        resultDisplay1.textContent = data.error || "Unknown error";
         setStatus("Decoding failed", "error");
         return;
       }
 
-      if (data.result >= 0) {
-        resultDisplay.className = "result-number success";
-        resultDisplay.textContent = data.result;
-        resultMeta.textContent =
+      if (data.mode === "isolated") {
+        resultLabel1.textContent = data.label;
+        resultDisplay1.className = "result-number success";
+        resultDisplay1.textContent = data.token;
+        resultMeta1.textContent =
+          "Label: " + data.label +
+          "  •  Score: " + data.score;
+        // Show rank 2 & 3 from top3
+        if (data.top3 && data.top3.length >= 2) {
+          resultDisplay2.className = "result-number success";
+          resultDisplay2.textContent = data.top3[1][0];
+          resultMeta2.textContent = "Score: " + data.top3[1][1].toFixed(4);
+          rank2.hidden = false;
+        }
+        if (data.top3 && data.top3.length >= 3) {
+          resultDisplay3.className = "result-number success";
+          resultDisplay3.textContent = data.top3[2][0];
+          resultMeta3.textContent = "Score: " + data.top3[2][1].toFixed(4);
+          rank3.hidden = false;
+        }
+        setStatus("Isolated token recognised");
+        showPlayback(data.processed_audio);
+      } else if (data.result >= 0) {
+        resultDisplay1.className = "result-number success";
+        resultDisplay1.textContent = data.result;
+        resultMeta1.textContent =
           "Tokens: " + data.tokens.join(" + ") +
           "  •  Score: " + data.score;
         setStatus("Recognised with HMM");
-        showPlayback();
+        showPlayback(data.processed_audio);
       } else {
-        resultDisplay.className = "result-number error";
-        resultDisplay.textContent = "?";
-        resultMeta.textContent = "Tokens: " + (data.tokens || []).join(" + ");
+        resultDisplay1.className = "result-number error";
+        resultDisplay1.textContent = "?";
+        resultMeta1.textContent = "Tokens: " + (data.tokens || []).join(" + ");
         setStatus("Recognition failed – no valid grammar match", "error");
-        showPlayback();
+        showPlayback(data.processed_audio);
       }
     } catch (e) {
-      resultDisplay.className = "result-number error";
-      resultDisplay.textContent = "Error";
+      resultDisplay1.className = "result-number error";
+      resultDisplay1.textContent = "Error";
       setStatus("Network error: " + e.message, "error");
     } finally {
       enableSubmit();
@@ -180,11 +221,14 @@
   }
 
   // ── Audio playback ────────────────────────────────────────────────
-  function showPlayback() {
+  function showPlayback(processedUrl) {
     if (!audioBlob) return;
     if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
     audioObjectUrl = URL.createObjectURL(audioBlob);
-    audioPlayer.src = audioObjectUrl;
+    audioOriginal.src = audioObjectUrl;
+    if (processedUrl) {
+      audioProcessed.src = processedUrl;
+    }
     playbackBar.hidden = false;
   }
 

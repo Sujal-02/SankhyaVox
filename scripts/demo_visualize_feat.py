@@ -1,129 +1,81 @@
 """
 SankhyaVox – Demo: Feature Visualisation.
 
-Generates waveform, spectrogram, and MFCC plots for a sample of
-processed audio, plus a cross-speaker comparison grid.
+Generates waveform, spectrogram, and MFCC plots for a given audio file,
+plus an optional preprocessed-vs-original comparison.
 
 Saves all figures to results/viz/ and also displays them interactively.
 
-Prerequisites:
-    Run DataPipeline().build() first to populate data_processed/.
-
 Usage:
-    python scripts/demo_visualize_feat.py
+    python scripts/demo_visualize_feat.py path/to/recording.wav
+    python scripts/demo_visualize_feat.py path/to/recording.wav --output-dir results/viz
 """
 
+import argparse
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dataset import SankhyaVoxDataset
 from src.config import RESULTS_DIR
-from src.viz import plot_comparison, plot_mfcc, plot_spectrogram, plot_waveform
-
-VIZ_DIR = RESULTS_DIR / "viz"
-VIZ_DIR.mkdir(parents=True, exist_ok=True)
+from src.viz import plot_mfcc, plot_spectrogram, plot_waveform
 
 
 def main():
-    ds = SankhyaVoxDataset()
-    if len(ds) == 0:
-        print("No samples found. Run DataPipeline().build() first.")
-        return
+    parser = argparse.ArgumentParser(
+        description="Visualise waveform, spectrogram, and MFCC for an audio file."
+    )
+    parser.add_argument(
+        "audio", type=str, help="Path to the input audio file (WAV, MP3, M4A, etc.)."
+    )
+    parser.add_argument(
+        "--output-dir", type=str, default=None,
+        help="Directory to save plots (default: results/viz).",
+    )
+    args = parser.parse_args()
 
-    print(f"Dataset: {repr(ds)}")
-    print(f"Saving visualisations to {VIZ_DIR}\n")
+    audio = Path(args.audio)
+    if not audio.exists():
+        print(f"Error: File not found: {audio}")
+        sys.exit(1)
 
-    # Pick the first sample for single-file plots
-    sample = ds[0]
-    wav_path = sample["audio_path"]
-    npy_path = ds.df.iloc[0]["npy_path"]
-    # Resolve npy_path relative to processed_dir
-    npy_abs = str(ds._root / npy_path)
-    label = f"{sample['speaker_id']}_{sample['token']}"
+    viz_dir = Path(args.output_dir) if args.output_dir else RESULTS_DIR / "viz"
+    viz_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"=== Single sample: {label} ===")
+    label = audio.stem
+
+    print(f"Audio: {audio}")
+    print(f"Saving visualisations to {viz_dir}\n")
 
     # Waveform
     print("  Plotting waveform...")
     plot_waveform(
-        wav_path,
+        str(audio),
         title=f"Waveform — {label}",
-        save_path=str(VIZ_DIR / f"{label}_waveform.png"),
+        save_path=str(viz_dir / f"{label}_waveform.png"),
     )
 
     # Mel spectrogram
     print("  Plotting spectrogram...")
     plot_spectrogram(
-        wav_path,
+        str(audio),
         title=f"Mel Spectrogram — {label}",
-        save_path=str(VIZ_DIR / f"{label}_spectrogram.png"),
+        save_path=str(viz_dir / f"{label}_spectrogram.png"),
     )
 
-    # MFCC heatmap (from .npy features)
+    # MFCC heatmap
     print("  Plotting MFCC heatmap...")
     plot_mfcc(
-        npy_abs,
+        str(audio),
         title=f"MFCC — {label}",
-        save_path=str(VIZ_DIR / f"{label}_mfcc.png"),
+        save_path=str(viz_dir / f"{label}_mfcc.png"),
     )
 
-    # MFCC heatmap (from .wav directly, for comparison)
-    print("  Plotting MFCC from audio...")
-    plot_mfcc(
-        wav_path,
-        title=f"MFCC (from wav) — {label}",
-        save_path=str(VIZ_DIR / f"{label}_mfcc_from_wav.png"),
-    )
-
-    # ── Cross-speaker comparison ──────────────────────────────────────────
-    # Pick one token and collect one sample per speaker
-    target_token = sample["token"]
-    speakers = ds.speakers
-    comparison_wavs = []
-    comparison_npys = []
-
-    for spk in speakers:
-        spk_ds = ds.filter(speaker=spk)
-        for i in range(len(spk_ds)):
-            s = spk_ds[i]
-            if s["token"] == target_token:
-                comparison_wavs.append(s["audio_path"])
-                comparison_npys.append(str(ds._root / spk_ds.df.iloc[i]["npy_path"]))
-                break
-
-    if len(comparison_wavs) >= 2:
-        print(f"\n=== Cross-speaker comparison for '{target_token}' ({len(comparison_wavs)} speakers) ===")
-
-        print("  Plotting waveform comparison...")
-        plot_comparison(
-            comparison_wavs,
-            kind="waveform",
-            save_path=str(VIZ_DIR / f"compare_{target_token}_waveform.png"),
-        )
-
-        print("  Plotting spectrogram comparison...")
-        plot_comparison(
-            comparison_wavs,
-            kind="spectrogram",
-            save_path=str(VIZ_DIR / f"compare_{target_token}_spectrogram.png"),
-        )
-
-        print("  Plotting MFCC comparison...")
-        plot_comparison(
-            comparison_npys,
-            kind="mfcc",
-            save_path=str(VIZ_DIR / f"compare_{target_token}_mfcc.png"),
-        )
-    else:
-        print(f"\n  Skipping comparison: only {len(comparison_wavs)} speaker(s) have '{target_token}'")
-
-    print(f"\nDone. All figures saved to {VIZ_DIR}")
+    print(f"\nDone. All figures saved to {viz_dir}")
 
 
 if __name__ == "__main__":
-    # Example:
-    #   python scripts/demo_visualize_feat.py
-    #   Outputs: results/viz/<speaker>_<token>_waveform.png, etc.
+    # Examples:
+    #   python scripts/demo_visualize_feat.py data_processed/human/segments/S01/S01_007_01.wav
+    #   python scripts/demo_visualize_feat.py recording.wav --output-dir my_plots/
     main()

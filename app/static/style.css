@@ -123,7 +123,39 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.25rem;
+}
+
+.result-rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: all 0.4s ease;
+}
+
+.result-rank.rank-1 {
+  transform: scale(1);
+  font-weight: 700;
+}
+
+.result-label {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  min-height: 1.4rem;
+}
+
+.result-rank.rank-2 {
+  transform: scale(0.65);
+  opacity: 0.7;
+}
+
+.result-rank.rank-3 {
+  transform: scale(0.45);
+  opacity: 0.45;
 }
 
 .result-number {
@@ -173,7 +205,28 @@ body {
   animation: fade-in 0.3s ease;
 }
 
-.playback-bar audio {
+.playback-pair {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.playback-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.playback-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.playback-item audio {
   width: 100%;
   height: 36px;
   border-radius: 8px;

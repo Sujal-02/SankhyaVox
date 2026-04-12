@@ -9,51 +9,19 @@ Usage:
     python scripts/demo_decode_sound.py path/to/recording.wav
     python scripts/demo_decode_sound.py path/to/recording.wav --checkpoint checkpoints/hmm_classifier.pkl
     python scripts/demo_decode_sound.py path/to/recording.wav --verbose
+    python scripts/demo_decode_sound.py path/to/recording.wav --isolated --verbose
 """
 
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Ensure project root is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dataset.pipeline import DataPipeline
 from models.hmm_classifier import SankhyaHMM
-from src.decoder import GrammarConstrainedDecoder
+from src.decoder import DEFAULT_CHECKPOINT, decode_audio
 from src.grammar import number_to_tokens
-
-DEFAULT_CHECKPOINT = "checkpoints/hmm_classifier.pkl"
-
-
-def decode_audio(audio_path: str, checkpoint_path: Optional[str] = None,
-                 verbose: bool = False):
-    """Decode a single audio file and return (integer, tokens, debug)."""
-    if checkpoint_path is None:
-        checkpoint_path = DEFAULT_CHECKPOINT
-
-    audio = Path(audio_path)
-    if not audio.exists():
-        raise FileNotFoundError(f"Audio file not found: {audio}")
-
-    ckpt_path = Path(checkpoint_path)
-    if not ckpt_path.exists():
-        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-
-    hmm = SankhyaHMM(checkpoint_path=str(ckpt_path))
-    decoder = GrammarConstrainedDecoder(hmm)
-
-    pipe = DataPipeline()
-    mfcc = pipe.process_single(str(audio))
-
-    if verbose:
-        print(f"Processing: {audio}")
-        print(f"  Checkpoint: {ckpt_path}")
-        print(f"  MFCC shape: {mfcc.shape}  ({mfcc.shape[0] / 100:.2f}s)")
-
-    result, tokens, debug = decoder.decode(mfcc, verbose=verbose)
-    return result, tokens, debug
 
 
 def main() -> None:
@@ -70,30 +38,46 @@ def main() -> None:
         help="Path to the trained SankhyaHMM pickle (default: checkpoints/hmm_classifier.pkl).",
     )
     parser.add_argument(
+        "--isolated", action="store_true",
+        help="Predict a single isolated token instead of a compound number.",
+    )
+    parser.add_argument(
         "--verbose", "-v", action="store_true", help="Print detailed decoding info."
     )
     args = parser.parse_args()
 
+    ckpt = args.checkpoint or DEFAULT_CHECKPOINT
+    hmm = SankhyaHMM(checkpoint_path=ckpt)
+
     try:
-        result, tokens, debug = decode_audio(
-            args.audio, args.checkpoint, args.verbose
+        result = decode_audio(
+            hmm, args.audio, args.verbose, args.isolated
         )
     except FileNotFoundError as e:
         print(f"Error: {e}")
         sys.exit(1)
 
     print()
-    if result >= 0:
-        expected_tokens = number_to_tokens(result)
-        print(f"  Result:  {result}")
-        print(f"  Tokens:  {' + '.join(tokens)}")
-        print(f"  Grammar: {' + '.join(expected_tokens)}")
-        print(f"  Score:   {debug['viterbi_score']}")
+    if args.isolated:
+        token, label, debug = result
+        print(f"  Token: {token}")
+        print(f"  Label: {label}")
+        print(f"  Score: {debug['best_score']}")
     else:
-        print(f"  Recognition failed.")
-        print(f"  Decoded tokens: {tokens}")
-        print(f"  Score: {debug['viterbi_score']}")
-        sys.exit(1)
+        integer: int = result[0]  # type: ignore[assignment]
+        tokens: list[str] = result[1]  # type: ignore[assignment]
+        debug: dict = result[2]  # type: ignore[assignment]
+        if integer >= 0:
+            expected_tokens = number_to_tokens(integer)
+            print(f"  Result:  {integer}")
+            print(f"  Tokens:  {' + '.join(tokens)}")
+            print(f"  Grammar: {' + '.join(expected_tokens)}")
+            print(f"  Score:   {debug['viterbi_score']}")
+        else:
+            print(f"  Recognition failed.")
+            print(f"  Decoded tokens: {tokens}")
+            print(f"  Score: {debug['viterbi_score']}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -101,4 +85,5 @@ if __name__ == "__main__":
     #   python scripts/demo_decode_sound.py data_processed/human/segments/S01/S01_007_01.wav
     #   python scripts/demo_decode_sound.py recording.wav --checkpoint checkpoints/hmm_classifier.pkl
     #   python scripts/demo_decode_sound.py recording.wav -v
+    #   python scripts/demo_decode_sound.py recording.wav --isolated -v
     main()

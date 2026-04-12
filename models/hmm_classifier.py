@@ -8,7 +8,7 @@ sequences.  Classification by maximum per-frame log-likelihood.
 import pickle
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from hmmlearn.hmm import GMMHMM
@@ -167,7 +167,34 @@ class SankhyaHMM:
             )
             preds.append(best_label)
         return np.array(preds)
+    def predict_with_scores(self, mfcc: np.ndarray) -> Tuple[str, int, dict]:
+        """Predict a single token with full score breakdown.
 
+        Returns
+        -------
+        token : str
+            Best-matching token name (e.g. "eka", "dasha").
+        label : int
+            Numeric value of the token.
+        debug : dict
+            All token scores, best token, and ranked top-3.
+        """
+        scores = {}
+        for label in self.models:
+            tok = VALUE_TO_TOKEN.get(label, f"?{label}")
+            scores[tok] = self.score(label, mfcc)
+
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        best_tok, best_score = ranked[0]
+        best_label = next(l for l, t in VALUE_TO_TOKEN.items() if t == best_tok)
+
+        return best_tok, best_label, {
+            "scores": {tok: round(sc, 4) for tok, sc in scores.items()},
+            "best_token": best_tok,
+            "best_label": best_label,
+            "best_score": round(best_score, 4),
+            "top3": [(tok, round(sc, 4)) for tok, sc in ranked[:3]],
+        }
     # ── Persistence ───────────────────────────────────────────────────────
 
     def save(self, path: str) -> None:
