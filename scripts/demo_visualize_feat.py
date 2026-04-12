@@ -39,10 +39,10 @@ def main():
         print(f"Error: File not found: {audio}")
         sys.exit(1)
 
-    viz_dir = Path(args.output_dir) if args.output_dir else RESULTS_DIR / "viz"
-    viz_dir.mkdir(parents=True, exist_ok=True)
-
+    base_dir = Path(args.output_dir) if args.output_dir else RESULTS_DIR / "viz"
     label = audio.stem
+    viz_dir = base_dir / label
+    viz_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Audio: {audio}")
     print(f"Saving visualisations to {viz_dir}\n")
@@ -52,7 +52,7 @@ def main():
     plot_waveform(
         str(audio),
         title=f"Waveform — {label}",
-        save_path=str(viz_dir / f"{label}_waveform.png"),
+        save_path=str(viz_dir / "waveform.png"),
     )
 
     # Mel spectrogram
@@ -60,7 +60,7 @@ def main():
     plot_spectrogram(
         str(audio),
         title=f"Mel Spectrogram — {label}",
-        save_path=str(viz_dir / f"{label}_spectrogram.png"),
+        save_path=str(viz_dir / "spectrogram.png"),
     )
 
     # MFCC heatmap
@@ -68,7 +68,7 @@ def main():
     plot_mfcc(
         str(audio),
         title=f"MFCC — {label}",
-        save_path=str(viz_dir / f"{label}_mfcc.png"),
+        save_path=str(viz_dir / "mfcc.png"),
     )
 
     print(f"\nDone. All figures saved to {viz_dir}")
