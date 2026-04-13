@@ -1,7 +1,9 @@
 # SankhyaVox
 **Minimal-Vocabulary Sanskrit Spoken Digit Recognition**
 
-SankhyaVox is an acoustic model and grammar-constrained speech recognition system that accurately recognises spoken Sanskrit numbers 0-99 using only **13 base recordings** per speaker (`shunya`, `eka`, `dvi`, ..., `vimsati`, `shata`). Built with classical HMM (Hidden Markov Model) techniques, it exploits Sanskrit's highly compositional grammatical structure to assemble acoustic base units into larger numbers the system has never been explicitly trained on.
+SankhyaVox is an acoustic model and grammar-constrained speech recognition system that recognises spoken Sanskrit numbers 0–99 using only **13 base tokens** per speaker (`shunya`, `eka`, `dvi`, ..., `vimsati`, `shata`). Built with classical GMM-HMM techniques and a grammar-constrained Viterbi decoder, it exploits Sanskrit's highly compositional grammatical structure to assemble acoustic base units into larger numbers the system has never been explicitly trained on.
+
+The system trains on augmented (pitch/speed-perturbed) and TTS-generated data alongside real human recordings, then tests on a held-out human speaker to measure cross-speaker generalisation.
 
 ## Directory Overview
 
@@ -22,17 +24,21 @@ SankhyaVox/
 │   ├── generator.py      #   TTS generation logic
 │   └── segmentor.py      #   VAD segmentation + QA
 ├── models/               # Model definitions (committed code, not weights)
-│   ├── hmm_classifier.py #   GMM-HMM (Bakis left-to-right, per-token, Baum-Welch)
+│   ├── hmm_classifier.py #   GMM-HMM (Bakis left-to-right with skip, per-token, Baum-Welch)
 │   ├── gmm_classifier.py #   GMM baseline (312-dim features, per-class max-likelihood)
 │   ├── knn_dtw_classifier.py  # k-NN + DTW (Sakoe-Chiba, distance-weighted)
 │   └── svm_classifier.py #   SVM baseline (352-dim features, RBF, grid search)
 ├── notebooks/            # Jupyter notebooks (self-contained, no project imports)
-│   ├── baseline_training.ipynb  # Legacy combined baseline notebook
-│   ├── train_gmm.ipynb          # GMM train/eval on augmented data
-│   ├── train_knn_dtw.ipynb      # k-NN+DTW train/eval on augmented data
-│   └── train_svm.ipynb          # SVM train/eval on augmented data
+│   ├── SankhyaVox_v2_Fixed.ipynb  # Legacy combined notebook
+│   ├── train_gmm.ipynb             # GMM train/eval on augmented data
+│   ├── train_hmm.ipynb             # HMM train/eval on augmented data
+│   ├── train_knn_dtw.ipynb         # k-NN+DTW train/eval on augmented data
+│   └── train_svm.ipynb             # SVM train/eval on augmented data
 ├── checkpoints/          # DVC-tracked saved model weights (git-ignored, auto-generated)
 ├── results/              # Evaluation outputs
+│   ├── hmm_evaluations/  #   Versioned HMM experiment notebooks (v1.0–v4.x)
+│   ├── notebook_outputs/  #  Kaggle output notebooks
+│   └── viz/              #   Visualisation outputs
 ├── scripts/              # CLI entry points and demo scripts
 ├── src/                  # Core modules
 │   ├── config.py         #   central paths, constants, hyperparameters
@@ -317,6 +323,7 @@ To train, open the notebook, paste the model class from `models/`, and run all c
 Change `TEST_SPEAKER` in the config cell to hold out a different speaker.
 
 | **Baseline Model Training** | `notebooks/train_*.ipynb` | GMM, HMM, k-NN+DTW, SVM train/eval |
+| **HMM Evaluations** | `results/hmm_evaluations/hmm_*.ipynb` | Versioned HMM experiments with different hyperparameters |
 
 ### Model Feature Transforms
 
@@ -327,10 +334,42 @@ Change `TEST_SPEAKER` in the config cell to hold out a different speaker.
 | k-NN+DTW | 13 × T | Static MFCCs only (strips Δ/ΔΔ), per-utterance z-normalisation |
 | SVM | 352 | mean, std, min, max, median, q10, q90, IQR, delta-abs-mean, log-duration |
 
+### HMM Architecture
+
+The primary classifier (`SankhyaHMM`) fits one Bakis (left-to-right) GMM-HMM per token class:
+
+- **Topology**: Left-to-right with skip transitions (stay 0.5 / advance 0.35 / skip-1 0.15)
+- **Start probability**: Fixed (state 0 = 1.0)
+- **Transition matrix**: Bakis initialised, then refined by Baum-Welch (`params="tmcw"`)
+- **Emissions**: Diagonal-covariance GMMs (configurable mixtures per token)
+- **Training**: Baum-Welch EM with configurable iterations (default 150)
+- **Scoring**: Per-frame log-likelihood normalised by sequence length
+- **Decoding**: Grammar-constrained Viterbi over sliding windows (`src/decoder.py`)
+
+### HMM Version History
+
+| Version | Key Changes | States | Mix | Iters | Accuracy (S05) |
+|---|---|---|---|---|---|
+| v1.0 | Initial Bakis GMM-HMM, `params="stmcw"` | 9–21 | 3 | 100 | 46.8% |
+| v2.0 | Frozen start/transitions (`params="mcw"`), covar/score fix | 9–21 | 3 | 100 | 59.1% |
+| v2.1 | Increased EM iterations (before data fix) | 9–21 | 3 | 150 | 66.1% |
+| v2.2 | Excluded corrupt S04 from training | 9–21 | 3 | 150 | 73.7% |
+| v2.3 | Re-included S04 after partial fix (still corrupt) | 9–21 | 3 | 150 | 69.4% |
+| v2.4 | Reduced states, per-token tuned mix, S04 excluded, 200 iters | 3–9 | 3–5 | 200 | 69.4% |
+| v3.0 | hmmlearn backend, skip transitions, 6 mix on confused tokens | 9–21 | 3–6 | 150 | 70.2% |
+| v4.0 | Transition learning (`params="tmcw"`), reduced states/mix | 3–5 | 4 | 150 | 71.3% |
+| v4.1 | Restored original high state counts | 9–21 | 4 | 150 | 74.3% |
+| v4.2 | Moderate states (6–12), 8 mix | 6–12 | 8 | 150 | 71.9% |
+| v4.3 | Same states, 12 mix | 6–12 | 12 | 150 | 72.5% |
+| v4.4 | Same states, 16 mix | 6–12 | 16 | 150 | **78.9%** |
+| v4.5 | Same as v4.4 but 200 EM iters (overfitting) | 6–12 | 16 | 200 | 62.6% |
+
 ## Notes
 
 - All paths and hyperparameters are defined in `src/config.py`.
 - Token vocabulary uses ASCII labels from `src/config.py` (`VOCAB`).
 - Feature visualisation tools (spectrograms, MFCC heatmaps, comparisons) are in `src/viz.py`.
 - Keep DVC credentials in `.dvc/config.local` only — never commit secrets to `.dvc/config`.
-- `data_processed/` and `models/` are git-ignored and regenerated at runtime.
+- `data_processed/` and `checkpoints/` are git-ignored and regenerated at runtime.
+- **Data speakers**: S01–S05 (human), TTS01–TTS04 (synthetic Edge TTS voices).
+- **Test protocol**: Train on augmented + TTS + human (excluding held-out speaker), test on held-out speaker's raw human segments.
