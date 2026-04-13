@@ -193,7 +193,7 @@ class SankhyaHMM:
             "best_token": best_tok,
             "best_label": best_label,
             "best_score": round(best_score, 4),
-            "top3": [(tok, round(sc, 4)) for tok, sc in ranked[:3]],
+            "ranked": [(tok, round(sc, 4)) for tok, sc in ranked],
         }
     # ── Persistence ───────────────────────────────────────────────────────
 

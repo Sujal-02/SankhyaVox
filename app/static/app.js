@@ -181,17 +181,17 @@
         resultMeta1.textContent =
           "Label: " + data.label +
           "  •  Score: " + data.score;
-        // Show rank 2 & 3 from top3
-        if (data.top3 && data.top3.length >= 2) {
+        // Show rank 2 & 3 from ranked
+        if (data.ranked && data.ranked.length >= 2) {
           resultDisplay2.className = "result-number success";
-          resultDisplay2.textContent = data.top3[1][0];
-          resultMeta2.textContent = "Score: " + data.top3[1][1].toFixed(4);
+          resultDisplay2.textContent = data.ranked[1][0];
+          resultMeta2.textContent = "Score: " + data.ranked[1][1].toFixed(4);
           rank2.hidden = false;
         }
-        if (data.top3 && data.top3.length >= 3) {
+        if (data.ranked && data.ranked.length >= 3) {
           resultDisplay3.className = "result-number success";
-          resultDisplay3.textContent = data.top3[2][0];
-          resultMeta3.textContent = "Score: " + data.top3[2][1].toFixed(4);
+          resultDisplay3.textContent = data.ranked[2][0];
+          resultMeta3.textContent = "Score: " + data.ranked[2][1].toFixed(4);
           rank3.hidden = false;
         }
         setStatus("Isolated token recognised");

@@ -121,7 +121,7 @@ def decode():
                 "token": token,
                 "label": label,
                 "score": debug["best_score"],
-                "top3": debug["top3"],
+                "ranked": debug["ranked"],
                 "processed_audio": proc_url,
             })
         else:
